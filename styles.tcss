@@ -46,7 +46,6 @@ HeaderClock {
 #logo_box {
     height: auto;
     align: center top;
-    margin-bottom: 1;
     padding-top: 1;
 }
 
@@ -61,12 +60,11 @@ HeaderClock {
     text-style: bold;
     text-align: center;
     width: 100%;
-    margin-top: 1;
 }
 
 #stats_box {
     height: auto;
-    background: #11111b;
+    background: #181825;
     border-top: solid #cba6f7;
     border-bottom: solid #cba6f7;
     padding: 1;
@@ -75,6 +73,7 @@ HeaderClock {
 
 #stats {
     width: 100%;
+    text-align: center;
 }
 
 #button_group {
@@ -93,6 +92,9 @@ Button {
     text-style: bold;
 }
 
+
+#btn_add_port { color: #a6e3a1; }
+#btn_add_port:hover { background: #a6e3a1; color: #11111b; }
 
 #btn_refresh { color: #89b4fa; }
 #btn_refresh:hover { background: #89b4fa; color: #11111b; }
@@ -147,7 +149,7 @@ DataTable > .datatable--hover {
 /* Modal Screen Details */
 ConfirmKillScreen {
     align: center middle;
-    background: #1e1e2ed9;
+    background: #1e1e2ebe;
 }
 
 #dialog {
@@ -183,6 +185,63 @@ ConfirmKillScreen {
     color: #cdd6f4;
 }
 
+AddPortScreen {
+    align: center middle;
+    background: #1e1e2ebe;
+}
+
+#add_port_dialog {
+    width: 60;
+    height: auto;
+    border: thick #a6e3a1 80%;
+    background: #181825;
+    padding: 1 2;
+}
+
+#add_port_title {
+    content-align: center middle;
+    width: 100%;
+    text-style: bold;
+    color: #cba6f7;
+    margin-bottom: 1;
+}
+
+#port_input {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+#validation_warning {
+    color: #f38ba8;
+    text-style: italic;
+    width: 100%;
+    content-align: center middle;
+    padding-top: 1;
+    display: none;
+}
+
+#validation_warning.warning_visible {
+    display: block;
+}
+
+#add_port_buttons {
+    grid-size: 2;
+    grid-gutter: 2;
+    height: 3;
+    margin-top: 1;
+}
+
+#add_port_buttons Button {
+    margin: 0;
+    height: 3;
+}
+
+#add_port_confirm { background: #45475a; color: #a6e3a1; }
+#add_port_confirm:hover { background: #a6e3a1; color: #11111b; }
+
+#add_port_cancel { background: #45475a; color: #f38ba8; }
+#add_port_cancel:hover { background: #f38ba8; color: #11111b; }
+
 /* Toasts */
 ToastRack {
     align: right bottom;
@@ -210,7 +269,7 @@ Screen:light #sidebar {
 }
 
 Screen:light #stats_box {
-    background: #dce0e8;
+    background: #e6e9ef;
     border-top: solid #1e66f5;
     border-bottom: solid #1e66f5;
 }
@@ -241,7 +300,7 @@ Screen:light DataTable > .datatable--hover {
 }
 
 ConfirmKillScreen:light {
-    background: rgba(30, 30, 46, 0.35);
+    background: #1e1e2ebe;
 }
 
 ConfirmKillScreen:light #dialog {
@@ -256,6 +315,30 @@ ConfirmKillScreen:light #dialog Button {
 ConfirmKillScreen:light #question {
     color: #4c4f69;
 }
+
+
+/* Add Port Modal */
+AddPortScreen:light {
+    background: #1e1e2ebe;
+}
+
+AddPortScreen:light #add_port_dialog {
+    background: #e6e9ef;
+    border: thick #40a02b 80%;
+}
+
+AddPortScreen:light #add_port_buttons Button {
+    background: #ccd0da;
+}
+
+AddPortScreen:light #add_port_title {
+    color: #1e66f5;
+}
+
+Screen:light #add_port_confirm { color: #40a02b; }
+Screen:light #add_port_confirm:hover { background: #40a02b; color: #eff1f5; }
+Screen:light #add_port_cancel { color: #d20f39; }
+Screen:light #add_port_cancel:hover { background: #d20f39; color: #eff1f5; }
 
 Screen:light Header {
     background: #5e73ff; 
@@ -286,6 +369,9 @@ Screen:light #logo { color: #1e66f5; }
 Screen:light #logo_manager { color: #8c8fa1; }
 
 /* Light Theme Button colors */
+Screen:light #btn_add_port { color: #40a02b; }
+Screen:light #btn_add_port:hover { background: #40a02b; color: #eff1f5; }
+
 Screen:light #btn_refresh { color: #1e66f5; }
 Screen:light #btn_refresh:hover { background: #1e66f5; color: #eff1f5; }
 

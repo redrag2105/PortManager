@@ -7,8 +7,8 @@ from textual.widgets._header import HeaderTitle
 from textual.reactive import reactive
 from textual.binding import Binding
 
-from modals import ConfirmKillScreen
-from utils import get_target_ports, get_running_processes, kill_process
+from modals import ConfirmKillScreen, AddPortScreen
+from utils import get_target_ports, get_running_processes, kill_process, add_target_port
 
 # --- Monkeypatch HeaderTitle to support dynamic subtitle colors ---
 def custom_header_render(self) -> Text:
@@ -57,6 +57,7 @@ class PortManagerApp(App):
                 with Container(id="stats_box"):
                     yield Label("Loading stats...", id="stats")
                 with Vertical(id="button_group"):
+                    yield Button("+ Add Port", id="btn_add_port")
                     yield Button("↻ Refresh", id="btn_refresh")
                     yield Button("✕ Kill Selected", id="btn_kill_selected")
                     yield Button("⚠ Kill All", id="btn_kill_all")
@@ -69,6 +70,11 @@ class PortManagerApp(App):
         yield Footer()
 
     def on_mount(self) -> None:
+        import os
+        if os.name == 'nt':
+            import ctypes
+            ctypes.windll.kernel32.SetConsoleTitleW('PortManager TUI')
+            
         self.title = "PORT MANAGER"
         self.sub_title = "Network Guardian"
         
@@ -111,7 +117,9 @@ class PortManagerApp(App):
         try:
             table = self.query_one(DataTable)
             row_key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key
-            idx = int(row_key.value)
+            if row_key.value is None:
+                return
+            idx = int(str(row_key.value))
             proc = self.processes_data[idx]
             
             btn_kill = self.query_one("#btn_kill_selected", Button)
@@ -138,8 +146,8 @@ class PortManagerApp(App):
         active_color = "#a6e3a1" if self.app.dark else "#40a02b"
         
         stats_msg = (
-            f"\n Total tracked:  [bold]{total}[/]\n"
-            f" Active ports:   [bold {active_color}]{running}[/]"
+            f"Total tracked: [bold]{total}[/]\n"
+            f"Active ports : [bold {active_color}]{running}[/]"
         )
         try:
             self.query_one("#stats", Label).update(stats_msg)
@@ -173,7 +181,9 @@ class PortManagerApp(App):
         table = self.query_one(DataTable)
         try:
             row_key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key
-            proc = self.processes_data[int(row_key.value)]
+            if row_key.value is None:
+                return
+            proc = self.processes_data[int(str(row_key.value))]
             
             if proc["pid"] == "-" or not str(proc["pid"]).isdigit():
                 return
@@ -211,12 +221,22 @@ class PortManagerApp(App):
             self.notify(success_msg.format(killed_count), title="Mass Termination", severity="warning", timeout=4)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "btn_refresh":
+        if event.button.id == "btn_add_port":
+            self.push_screen(AddPortScreen(self.target_ports), self._handle_add_port)
+        elif event.button.id == "btn_refresh":
             self.action_refresh_data()
         elif event.button.id == "btn_kill_selected":
             self.action_kill_selected()
         elif event.button.id == "btn_kill_all":
             self.action_kill_all()
+            
+    def _handle_add_port(self, port: int | None) -> None:
+        if port is not None:
+            if add_target_port(port):
+                self.notify(f"Port {port} added!", severity="information")
+                self.action_refresh_data()
+            else:
+                self.notify(f"Could not add port {port}.", severity="error")
 
 if __name__ == "__main__":
     app = PortManagerApp()
