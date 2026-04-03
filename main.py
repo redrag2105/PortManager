@@ -38,7 +38,7 @@ class PortManagerApp(App):
         Binding("q", "quit", "Quit", show=True),
         Binding("r", "refresh_data", "Refresh", show=True),
         Binding("k", "kill_selected", "Kill Selected", show=True),
-        Binding("K", "kill_all", "Kill ALL", show=True),
+        Binding("K", "kill_all", "Kill ALL", show=True, key_display="Shift+K"),
         Binding("d", "toggle_dark", "Toggle Theme", show=True),
     ]
 
@@ -92,6 +92,11 @@ class PortManagerApp(App):
         self.set_timer(0.1, lambda: self.query_one("#sidebar").add_class("-loaded"))
         table.focus()
 
+    def action_toggle_dark(self) -> None:
+        self.dark = not self.dark
+        self.update_table()
+        self.update_stats()
+
     def action_refresh_data(self) -> None:
         self.target_ports = get_target_ports()
         self.processes_data = get_running_processes(self.target_ports)
@@ -116,14 +121,25 @@ class PortManagerApp(App):
                 self.query_one("#btn_kill_selected", Button).disabled = True
             except:
                 pass
+                
+        try:
+            running_procs = sum(1 for p in self.processes_data if p["status"] == "RUNNING")
+            self.query_one("#btn_kill_all", Button).disabled = (running_procs == 0)
+        except Exception:
+            try:
+                self.query_one("#btn_kill_all", Button).disabled = True
+            except:
+                pass
 
     def update_stats(self) -> None:
         running = sum(1 for p in self.processes_data if p['status'] == 'RUNNING')
         total = len(self.target_ports)
         
+        active_color = "#a6e3a1" if self.app.dark else "#40a02b"
+        
         stats_msg = (
             f"\n Total tracked:  [bold]{total}[/]\n"
-            f" Active ports:   [bold #a6e3a1]{running}[/]"
+            f" Active ports:   [bold {active_color}]{running}[/]"
         )
         try:
             self.query_one("#stats", Label).update(stats_msg)
@@ -133,15 +149,23 @@ class PortManagerApp(App):
     def update_table(self) -> None:
         table = self.query_one(DataTable)
         table.clear()
+        
+        is_dark = self.app.dark
+        active_col = "#a6e3a1" if is_dark else "#40a02b"
+        inactive_col = "#585b70" if is_dark else "#9ca0b0"
+        port_col = "bold #cba6f7" if is_dark else "bold #1e66f5"
+        pid_col = "#89b4fa" if is_dark else "#209fb5"
+        name_col = "bold" if is_dark else "bold #4c4f69"
+
         for idx, proc in enumerate(self.processes_data):
             # Clean, DRY rendering for active vs inactive ports
             is_run = proc['status'] == 'RUNNING'
             
             table.add_row(
-                Text("●" if is_run else "○", style="#a6e3a1" if is_run else "#585b70", justify="center"),
-                Text(str(proc['port']), style="bold #cba6f7" if is_run else "#6c7086", justify="center"),
-                Text(str(proc['pid']), style="#89b4fa" if is_run else "#585b70", justify="center"),
-                Text(str(proc['name']), style="bold" if is_run else "#585b70", justify="center"),
+                Text("●" if is_run else "○", style=active_col if is_run else inactive_col, justify="center"),
+                Text(str(proc['port']), style=port_col if is_run else inactive_col, justify="center"),
+                Text(str(proc['pid']), style=pid_col if is_run else inactive_col, justify="center"),
+                Text(str(proc['name']), style=name_col if is_run else inactive_col, justify="center"),
                 key=str(idx)
             )
 

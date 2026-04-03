@@ -240,20 +240,20 @@ Screen:light DataTable > .datatable--hover {
     background: #e6e9ef !important;
 }
 
-Screen:light ConfirmKillScreen {
-    background: #eff1f5d9;
+ConfirmKillScreen:light {
+    background: rgba(30, 30, 46, 0.35);
 }
 
-Screen:light #dialog {
+ConfirmKillScreen:light #dialog {
     background: #e6e9ef;
     border: thick #d20f39 80%;
 }
 
-Screen:light #dialog Button {
+ConfirmKillScreen:light #dialog Button {
     background: #ccd0da;
 }
 
-Screen:light #question {
+ConfirmKillScreen:light #question {
     color: #4c4f69;
 }
 
