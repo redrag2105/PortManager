@@ -1,0 +1,298 @@
+Screen {
+    background: #1e1e2e;
+    color: #cdd6f4;
+}
+
+/* Header Styling */
+Header {
+    background: #cba6f7;
+    color: #1e1e2e;
+}
+
+HeaderIcon {
+    color: #d80000;
+}
+
+HeaderTitle {
+    color: #161620;
+    text-style: bold;
+}
+
+HeaderClock {
+    color: #ffffff;
+    background: #b979fd;
+}
+
+#root_layout {
+    layout: horizontal;
+    height: 100%;
+}
+
+/* Sidebar Styling */
+#sidebar {
+    width: 30;
+    height: 100%;
+    background: #181825;
+    padding: 0 2;
+    border-right: vkey #313244;
+    transition: opacity 800ms out_circ;
+    opacity: 0.0;
+}
+
+#sidebar.-loaded {
+    opacity: 1.0;
+}
+
+#logo_box {
+    height: auto;
+    align: center top;
+    margin-bottom: 1;
+    padding-top: 1;
+}
+
+#logo {
+    color: #cba6f7;
+    text-style: bold;
+    text-align: center;
+}
+
+#logo_manager {
+    color: #6c7086;
+    text-style: bold;
+    text-align: center;
+    width: 100%;
+    margin-top: 1;
+}
+
+#stats_box {
+    height: auto;
+    background: #11111b;
+    border-top: solid #cba6f7;
+    border-bottom: solid #cba6f7;
+    padding: 1;
+    margin-bottom: 1;
+}
+
+#stats {
+    width: 100%;
+}
+
+#button_group {
+    height: auto;
+    align: center top;
+}
+
+Button {
+    width: 100%;
+    height: 3;
+    margin-bottom: 1;
+    background: #313244;
+    color: #cdd6f4;
+    border: none;
+    transition: background 200ms;
+    text-style: bold;
+}
+
+
+#btn_refresh { color: #89b4fa; }
+#btn_refresh:hover { background: #89b4fa; color: #11111b; }
+
+#btn_kill_selected { color: #fab387; }
+#btn_kill_selected:hover { background: #fab387; color: #11111b; }
+#btn_kill_selected:disabled { color: #6c7086; }
+
+#btn_kill_all { color: #f38ba8; }
+#btn_kill_all:hover { background: #f38ba8; color: #11111b; }
+#btn_kill_all:disabled { color: #6c7086; }
+
+/* Main Content Styling */
+#main_content {
+    width: 1fr;
+    height: 100%;
+    padding: 2;
+    background: #1e1e2e;
+}
+
+#table_wrapper {
+    height: 1fr;
+    width: 100%;
+}
+
+DataTable {
+    height: 1fr;
+    background: #1e1e2e;
+    border: outer #45475a;
+    border-title-color: #f38ba8;
+    opacity: 0.0;
+    transition: opacity 600ms in_out_cubic;
+}
+
+DataTable:focus {
+    border: outer #cba6f7;
+}
+
+DataTable.-loaded {
+    opacity: 1.0;
+}
+
+DataTable > .datatable--cursor {
+    background: #313244 !important;
+    text-style: bold;
+}
+
+DataTable > .datatable--hover {
+    background: #181825 !important;
+}
+
+/* Modal Screen Details */
+ConfirmKillScreen {
+    align: center middle;
+    background: #1e1e2ed9;
+}
+
+#dialog {
+    grid-size: 2;
+    grid-gutter: 1 2;
+    grid-rows: 1fr 3;
+    padding: 1 2;
+    width: 60;
+    height: 12;
+    border: thick #f38ba8 80%;
+    background: #181825;
+}
+
+#dialog Button {
+    width: 100%;
+    height: 3;
+    margin: 0;
+    align: center middle;
+    content-align: center middle;
+}
+
+#kill { background: #45475a; color: #f38ba8; border: none; }
+#kill:hover { background: #f38ba8; color: #11111b; }
+#cancel { background: #45475a; color: #89b4fa; border: none; }
+#cancel:hover { background: #89b4fa; color: #11111b; }
+
+#question {
+    column-span: 2;
+    height: 1fr;
+    width: 1fr;
+    content-align: center middle;
+    text-style: bold;
+    color: #cdd6f4;
+}
+
+/* Toasts */
+ToastRack {
+    align: right bottom;
+    margin-bottom: 2; /* Offset to sit right above the footer */
+    margin-right: 2;
+}
+
+Toast {
+    opacity: 0.95;
+}
+
+/* Light Theme (Latte) Overrides */
+Screen:light {
+    background: #eff1f5;
+    color: #4c4f69;
+}
+
+Screen:light #main_content {
+    background: #eff1f5;
+}
+
+Screen:light #sidebar {
+    background: #e6e9ef;
+    border-right: vkey #bcc0cc;
+}
+
+Screen:light #stats_box {
+    background: #dce0e8;
+    border-top: solid #1e66f5;
+    border-bottom: solid #1e66f5;
+}
+
+Screen:light DataTable {
+    background: #eff1f5;
+    border: outer #bcc0cc;
+    border-title-color: #1e66f5;
+    color: #4c4f69;
+}
+
+Screen:light DataTable:focus {
+    border: outer #1e66f5;
+}
+
+Screen:light Button {
+    background: #ccd0da;
+    color: #4c4f69;
+    text-style: bold;
+}
+
+Screen:light DataTable > .datatable--cursor {
+    background: #bcc0cc !important;
+}
+
+Screen:light DataTable > .datatable--hover {
+    background: #e6e9ef !important;
+}
+
+Screen:light ConfirmKillScreen {
+    background: #eff1f5d9;
+}
+
+Screen:light #dialog {
+    background: #e6e9ef;
+    border: thick #d20f39 80%;
+}
+
+Screen:light #dialog Button {
+    background: #ccd0da;
+}
+
+Screen:light #question {
+    color: #4c4f69;
+}
+
+Screen:light Header {
+    background: #5e73ff; 
+    color: #4c4f69;
+    border: none;
+}
+
+Screen:light HeaderIcon {
+    color: #ff98af;
+}
+
+Screen:light HeaderTitle {
+    color: #ffffff;
+}
+
+Screen:light HeaderClock {
+    color: #fbfbff;
+    background: #455dff;
+    border: none;
+}
+
+Screen:light #kill { color: #d20f39; }
+Screen:light #kill:hover { background: #d20f39; color: #eff1f5; }
+Screen:light #cancel { color: #1e66f5; }
+Screen:light #cancel:hover { background: #1e66f5; color: #eff1f5; }
+
+Screen:light #logo { color: #1e66f5; }
+Screen:light #logo_manager { color: #8c8fa1; }
+
+/* Light Theme Button colors */
+Screen:light #btn_refresh { color: #1e66f5; }
+Screen:light #btn_refresh:hover { background: #1e66f5; color: #eff1f5; }
+
+Screen:light #btn_kill_selected { color: #df8e1d; }
+Screen:light #btn_kill_selected:hover { background: #df8e1d; color: #eff1f5; }
+Screen:light #btn_kill_selected:disabled { background: #cfd3df; color: #aaabb8; }
+
+Screen:light #btn_kill_all { color: #d20f39; }
+Screen:light #btn_kill_all:hover { background: #d20f39; color: #eff1f5; }
+Screen:light #btn_kill_all:disabled { background: #cfd3df; color: #aaabb8; }

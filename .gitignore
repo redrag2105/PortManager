@@ -1,0 +1,14 @@
+# Python Virtual Environment
+venv/
+
+# Python Byte-compiled / Cache Files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyInstaller Build / Distribution Folders
+build/
+dist/
+
+# Local Data/Config 
+ports.txt
