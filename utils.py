@@ -1,23 +1,34 @@
 import psutil
 from pathlib import Path
 
-def get_target_ports() -> set:
+def _get_ports_file() -> Path:
+    ports_file = Path("ports.txt")
+    if not ports_file.exists():
+        ports_file.write_text("3000\n3001\n3002\n3003\n3004\n3005\n")       
+    return ports_file
+
+def _read_ports() -> list[str]:
     try:
-        ports_file = Path("ports.txt")
-        if not ports_file.exists():
-            ports_file.write_text("3000\n3001\n3002\n3003\n3004\n3005\n")
-        
-        with open(ports_file, "r") as f:
-            lines = f.read().splitlines()
-        
-        ports = set()
-        for line in lines:
-            cleaned = line.strip().split("#")[0].strip() # ignore comments
-            if cleaned and cleaned.isdigit():
-                ports.add(int(cleaned))
-        return ports
-    except Exception as e:
-        return set()
+        with open(_get_ports_file(), "r") as f:
+            return f.readlines()
+    except Exception:
+        return []
+
+def _write_ports(lines: list[str]) -> bool:
+    try:
+        with open(_get_ports_file(), "w") as f:
+            f.writelines(lines)
+        return True
+    except Exception:
+        return False
+
+def get_target_ports() -> set:
+    ports = set()
+    for line in _read_ports():
+        cleaned = line.strip().split("#")[0].strip() # ignore comments      
+        if cleaned and cleaned.isdigit():
+            ports.add(int(cleaned))
+    return ports
 
 def get_running_processes(target_ports: set) -> list[dict]:
     results = []
@@ -83,17 +94,11 @@ def kill_process(pid: int) -> bool:
 
 def add_target_port(port: int) -> bool:
     """Adds a new port to ports.txt if it doesn't already exist."""
+    current_ports = get_target_ports()
+    if port in current_ports:
+        return False
     try:
-        ports_file = Path("ports.txt")
-        # Ensure file exists
-        if not ports_file.exists():
-            get_target_ports()
-            
-        current_ports = get_target_ports()
-        if port in current_ports:
-            return False
-            
-        with open(ports_file, "a") as f:
+        with open(_get_ports_file(), "a") as f:
             f.write(f"{port}\n")
         return True
     except Exception:
@@ -101,63 +106,37 @@ def add_target_port(port: int) -> bool:
 
 def remove_target_port(port: int) -> bool:
     """Removes a port from ports.txt."""
-    try:
-        ports_file = Path("ports.txt")
-        if not ports_file.exists():
-            return False
-            
-        with open(ports_file, "r") as f:
-            lines = f.readlines()
-            
-        new_lines = []
-        port_removed = False
-        for line in lines:
-            cleaned = line.strip().split("#")[0].strip()
-            if cleaned and cleaned.isdigit() and int(cleaned) == port:
-                port_removed = True
-                continue # Skip adding this line back
-            new_lines.append(line)
-            
-        if port_removed:
-            with open(ports_file, "w") as f:
-                f.writelines(new_lines)
-            return True
-        return False
-    except Exception:
-        return False
+    lines = _read_ports()
+    new_lines = []
+    port_removed = False
+    for line in lines:
+        cleaned = line.strip().split("#")[0].strip()
+        if cleaned and cleaned.isdigit() and int(cleaned) == port:
+            port_removed = True
+            continue # Skip adding this line back
+        new_lines.append(line)
+
+    return _write_ports(new_lines) if port_removed else False
 
 def edit_target_port(old_port: int, new_port: int) -> bool:
     """Changes an existing port to a new port in ports.txt."""
-    try:
-        if old_port == new_port:
-            return True
-            
-        current_ports = get_target_ports()
-        if new_port in current_ports:
-            return False # Target port already exists
-            
-        ports_file = Path("ports.txt")
-        if not ports_file.exists():
-            return False
-            
-        with open(ports_file, "r") as f:
-            lines = f.readlines()
-            
-        new_lines = []
-        port_edited = False
-        for line in lines:
-            cleaned = line.strip().split("#")[0].strip()
-            if cleaned and cleaned.isdigit() and int(cleaned) == old_port:
-                # Replace the number but preserve comments/newlines after it
-                idx = line.find(cleaned)
-                line = line[:idx] + str(new_port) + line[idx+len(cleaned):]
-                port_edited = True
-            new_lines.append(line)
-            
-        if port_edited:
-            with open(ports_file, "w") as f:
-                f.writelines(new_lines)
-            return True
-        return False
-    except Exception:
-        return False
+    if old_port == new_port:
+        return True
+
+    current_ports = get_target_ports()
+    if new_port in current_ports:
+        return False # Target port already exists
+
+    lines = _read_ports()
+    new_lines = []
+    port_edited = False
+    for line in lines:
+        cleaned = line.strip().split("#")[0].strip()
+        if cleaned and cleaned.isdigit() and int(cleaned) == old_port:      
+            # Replace the number but preserve comments/newlines after it    
+            idx = line.find(cleaned)
+            line = line[:idx] + str(new_port) + line[idx+len(cleaned):]     
+            port_edited = True
+        new_lines.append(line)
+
+    return _write_ports(new_lines) if port_edited else False

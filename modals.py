@@ -27,111 +27,61 @@ class ConfirmKillScreen(ModalScreen[bool]):
             self.dismiss(False)
 
 
-class AddPortScreen(ModalScreen[int | None]):
-    """Screen to add a new port."""
+class BasePortScreen(ModalScreen[int | None]):
+    """Base screen containing shared logic for Adding and Editing ports."""
 
     CSS_PATH = "styles.tcss"
 
-    def __init__(self, current_ports: set[int]):
-        super().__init__()
-        self.current_ports = current_ports
-
-    def compose(self) -> ComposeResult:
-        with Vertical(id="add_port_dialog"):
-            yield Label("Add New Port to Monitor", id="add_port_title")
-            yield Input(placeholder="Enter port (1-65535)", id="port_input", type="integer")
-            yield Label("", id="validation_warning", classes="warning_hidden")
-            with Grid(id="add_port_buttons"):
-                yield Button("Add Port", id="add_port_confirm")
-                yield Button("Cancel", id="add_port_cancel")
-
-    def validate_and_submit(self) -> None:
-        input_widget = self.query_one("#port_input", Input)
-        warning_label = self.query_one("#validation_warning", Label)
-        
-        value = input_widget.value.strip()
-        
-        if not value:
-            warning_label.update("Port cannot be empty.")
-            warning_label.classes = "warning_visible"
-            return
-            
-        if not value.isdigit():
-            warning_label.update("Port must be numeric.")
-            warning_label.classes = "warning_visible"
-            return
-            
-        port = int(value)
-        if not (1 <= port <= 65535):
-            warning_label.update("Port must be between 1 and 65535.")
-            warning_label.classes = "warning_visible"
-            return
-            
-        if port in self.current_ports:
-            warning_label.update("Port is already being tracked.")
-            warning_label.classes = "warning_visible"
-            return
-            
-        # Validation passed
-        self.dismiss(port)
-
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "add_port_confirm":
-            self.validate_and_submit()
-        elif event.button.id == "add_port_cancel":
-            self.dismiss(None)
-
-    def on_input_submitted(self, event: Input.Submitted) -> None:
-        if event.input.id == "port_input":
-            self.validate_and_submit()
-
-class EditPortScreen(ModalScreen[int | None]):
-    """Screen to edit an existing port."""
-
-    CSS_PATH = "styles.tcss"
-
-    def __init__(self, current_ports: set[int], old_port: int):
+    def __init__(self, current_ports: set[int], old_port: int | None = None):
         super().__init__()
         self.current_ports = current_ports
         self.old_port = old_port
 
+    @property
+    def is_edit(self) -> bool:
+        return self.old_port is not None
+
     def compose(self) -> ComposeResult:
         with Vertical(id="add_port_dialog"):
-            yield Label(f"Edit Port {self.old_port}", id="add_port_title")
-            yield Input(value=str(self.old_port), placeholder="Enter port (1-65535)", id="port_input", type="integer")
-            yield Label("", id="validation_warning", classes="warning_hidden")
+            title = f"Edit Port {self.old_port}" if self.is_edit else "Add New Port to Monitor"
+            yield Label(title, id="add_port_title")
+            
+            value = str(self.old_port) if self.is_edit else ""
+            yield Input(value=value, placeholder="Enter port (1-65535)", id="port_input", type="integer")
+            yield Label("", id="validation_warning", classes="warning_hidden")  
+            
             with Grid(id="add_port_buttons"):
-                yield Button("Save Edit", id="add_port_confirm")
+                btn_text = "Save Edit" if self.is_edit else "Add Port"
+                yield Button(btn_text, id="add_port_confirm")
                 yield Button("Cancel", id="add_port_cancel")
 
     def validate_and_submit(self) -> None:
         input_widget = self.query_one("#port_input", Input)
         warning_label = self.query_one("#validation_warning", Label)
-        
+
         value = input_widget.value.strip()
-        
+
         if not value:
             warning_label.update("Port cannot be empty.")
             warning_label.classes = "warning_visible"
             return
-            
+
         if not value.isdigit():
             warning_label.update("Port must be numeric.")
             warning_label.classes = "warning_visible"
             return
-            
+
         port = int(value)
         if not (1 <= port <= 65535):
             warning_label.update("Port must be between 1 and 65535.")
             warning_label.classes = "warning_visible"
             return
-            
-        if port != self.old_port and port in self.current_ports:
+
+        if (self.is_edit and port != self.old_port and port in self.current_ports) or (not self.is_edit and port in self.current_ports):
             warning_label.update("Port is already being tracked.")
             warning_label.classes = "warning_visible"
             return
-            
-        # Validation passed
+
         self.dismiss(port)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -143,3 +93,13 @@ class EditPortScreen(ModalScreen[int | None]):
     def on_input_submitted(self, event: Input.Submitted) -> None:
         if event.input.id == "port_input":
             self.validate_and_submit()
+
+class AddPortScreen(BasePortScreen):
+    """Screen to add a new port."""
+    def __init__(self, current_ports: set[int]):
+        super().__init__(current_ports, old_port=None)
+
+class EditPortScreen(BasePortScreen):
+    """Screen to edit an existing port."""
+    def __init__(self, current_ports: set[int], old_port: int):
+        super().__init__(current_ports, old_port=old_port)

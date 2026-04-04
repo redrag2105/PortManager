@@ -38,6 +38,8 @@ class PortManagerApp(App):
     BINDINGS = [
         Binding("q", "quit", "Quit", show=True),
         Binding("r", "refresh_data", "Refresh", show=True),
+        Binding("~", "edit_selected", "Edit", show=True),
+        Binding("-", "untrack_selected", "Untrack", show=True),
         Binding("k", "kill_selected", "Kill Selected", show=True),
         Binding("K", "kill_all", "Kill ALL", show=True, key_display="Shift+K"),
         Binding("d", "toggle_dark", "Toggle Theme", show=True),
@@ -220,6 +222,35 @@ class PortManagerApp(App):
             self.action_refresh_data()
         else:
             self.notify(f"Failed to remove port.", severity="error")
+
+    def action_edit_selected(self) -> None:
+        table = self.query_one(DataTable)
+        try:
+            row_key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key
+            if row_key.value is None:
+                return
+            proc = self.processes_data[int(str(row_key.value))]
+            self.push_screen(
+                EditPortScreen(self.target_ports, proc['port']),
+                lambda new_port: self._handle_edit_port(proc['port'], new_port)
+            )
+        except Exception:
+            pass
+
+    def action_untrack_selected(self) -> None:
+        table = self.query_one(DataTable)
+        try:
+            row_key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key
+            if row_key.value is None:
+                return
+            proc = self.processes_data[int(str(row_key.value))]
+            msg = f"Stop tracking port {proc['port']}?"
+            self.push_screen(
+                ConfirmKillScreen(msg, is_untrack=True),
+                lambda confirm: self._handle_untrack_port(proc['port']) if confirm else None
+            )
+        except Exception:
+            pass
 
     def action_kill_selected(self) -> None:
         table = self.query_one(DataTable)
