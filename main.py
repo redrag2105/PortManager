@@ -1,14 +1,15 @@
 import sys
 from rich.text import Text
 from textual.app import App, ComposeResult
+from textual import on, events
 from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import Header, Footer, DataTable, Button, Static, Label
 from textual.widgets._header import HeaderTitle
 from textual.reactive import reactive
 from textual.binding import Binding
 
-from modals import ConfirmKillScreen, AddPortScreen
-from utils import get_target_ports, get_running_processes, kill_process, add_target_port
+from modals import ConfirmKillScreen, AddPortScreen, EditPortScreen
+from utils import get_target_ports, get_running_processes, kill_process, add_target_port, remove_target_port, edit_target_port
 
 # --- Monkeypatch HeaderTitle to support dynamic subtitle colors ---
 def custom_header_render(self) -> Text:
@@ -89,6 +90,8 @@ class PortManagerApp(App):
             Text("PORT", justify="center"),
             Text("PID", justify="center"),
             Text("PROCESS", justify="center"),
+            Text("EDIT", justify="center"),
+            Text("DEL", justify="center"),
         )
 
         self.action_refresh_data()
@@ -164,6 +167,9 @@ class PortManagerApp(App):
         port_col = "bold #cba6f7" if is_dark else "bold #1e66f5"
         pid_col = "#89b4fa" if is_dark else "#209fb5"
         name_col = "bold" if is_dark else "bold #4c4f69"
+        
+        edit_col = "#fab387" if is_dark else "#df8e1d"
+        delete_col = "#f38ba8" if is_dark else "#d20f39"
 
         for idx, proc in enumerate(self.processes_data):
             # Clean, DRY rendering for active vs inactive ports
@@ -174,8 +180,46 @@ class PortManagerApp(App):
                 Text(str(proc['port']), style=port_col if is_run else inactive_col, justify="center"),
                 Text(str(proc['pid']), style=pid_col if is_run else inactive_col, justify="center"),
                 Text(str(proc['name']), style=name_col if is_run else inactive_col, justify="center"),
+                Text("~", style=edit_col, justify="center"),
+                Text("-", style=delete_col, justify="center"),
                 key=str(idx)
             )
+
+    @on(DataTable.RowSelected)
+    def handle_row_selection(self, event: DataTable.RowSelected) -> None:
+        table = self.query_one(DataTable)
+        column = table.cursor_coordinate.column if table.cursor_coordinate else None
+        if column is None:
+            return
+            
+        row_idx = int(str(event.row_key.value))
+        proc = self.processes_data[row_idx]
+        
+        # Determine if click was on Edit or Untrack column
+        if column == 4:
+            self.push_screen(EditPortScreen(self.target_ports, proc['port']),
+                             lambda new_port: self._handle_edit_port(proc['port'], new_port))
+        elif column == 5:
+            msg = f"Stop tracking port {proc['port']}?"
+            self.push_screen(
+                ConfirmKillScreen(msg, is_untrack=True),
+                lambda confirm: self._handle_untrack_port(proc['port']) if confirm else None
+            )
+
+    def _handle_edit_port(self, old_port: int, new_port: int | None) -> None:
+        if new_port is not None:
+            if edit_target_port(old_port, new_port):
+                self.notify(f"Port {old_port} changed to {new_port}.", severity="information")
+                self.action_refresh_data()
+            else:
+                self.notify(f"Failed to edit port.", severity="error")
+
+    def _handle_untrack_port(self, port: int) -> None:
+        if remove_target_port(port):
+            self.notify(f"Port {port} is no longer tracked.", severity="information")
+            self.action_refresh_data()
+        else:
+            self.notify(f"Failed to remove port.", severity="error")
 
     def action_kill_selected(self) -> None:
         table = self.query_one(DataTable)

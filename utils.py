@@ -98,3 +98,66 @@ def add_target_port(port: int) -> bool:
         return True
     except Exception:
         return False
+
+def remove_target_port(port: int) -> bool:
+    """Removes a port from ports.txt."""
+    try:
+        ports_file = Path("ports.txt")
+        if not ports_file.exists():
+            return False
+            
+        with open(ports_file, "r") as f:
+            lines = f.readlines()
+            
+        new_lines = []
+        port_removed = False
+        for line in lines:
+            cleaned = line.strip().split("#")[0].strip()
+            if cleaned and cleaned.isdigit() and int(cleaned) == port:
+                port_removed = True
+                continue # Skip adding this line back
+            new_lines.append(line)
+            
+        if port_removed:
+            with open(ports_file, "w") as f:
+                f.writelines(new_lines)
+            return True
+        return False
+    except Exception:
+        return False
+
+def edit_target_port(old_port: int, new_port: int) -> bool:
+    """Changes an existing port to a new port in ports.txt."""
+    try:
+        if old_port == new_port:
+            return True
+            
+        current_ports = get_target_ports()
+        if new_port in current_ports:
+            return False # Target port already exists
+            
+        ports_file = Path("ports.txt")
+        if not ports_file.exists():
+            return False
+            
+        with open(ports_file, "r") as f:
+            lines = f.readlines()
+            
+        new_lines = []
+        port_edited = False
+        for line in lines:
+            cleaned = line.strip().split("#")[0].strip()
+            if cleaned and cleaned.isdigit() and int(cleaned) == old_port:
+                # Replace the number but preserve comments/newlines after it
+                idx = line.find(cleaned)
+                line = line[:idx] + str(new_port) + line[idx+len(cleaned):]
+                port_edited = True
+            new_lines.append(line)
+            
+        if port_edited:
+            with open(ports_file, "w") as f:
+                f.writelines(new_lines)
+            return True
+        return False
+    except Exception:
+        return False
