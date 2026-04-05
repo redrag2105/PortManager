@@ -7,9 +7,10 @@ from textual.widgets import Header, Footer, DataTable, Button, Static, Label
 from textual.widgets._header import HeaderTitle
 from textual.reactive import reactive
 from textual.binding import Binding
+import datetime
 
 from modals import ConfirmKillScreen, AddPortScreen, EditPortScreen
-from utils import get_target_ports, get_running_processes, kill_process, add_target_port, remove_target_port, edit_target_port
+from utils import get_target_ports, get_running_processes, get_process_details, kill_process, add_target_port, remove_target_port, edit_target_port
 
 # --- Monkeypatch HeaderTitle to support dynamic subtitle colors ---
 def custom_header_render(self) -> Text:
@@ -36,13 +37,17 @@ class PortManagerApp(App):
     CSS_PATH = 'styles.tcss'
 
     BINDINGS = [
-        Binding("q", "quit", "Quit", show=True),
-        Binding("r", "refresh_data", "Refresh", show=True),
-        Binding("~", "edit_selected", "Edit", show=True),
-        Binding("-", "untrack_selected", "Untrack", show=True),
-        Binding("k", "kill_selected", "Kill Selected", show=True),
-        Binding("K", "kill_all", "Kill ALL", show=True, key_display="Shift+K"),
-        Binding("d", "toggle_dark", "Toggle Theme", show=True),
+        Binding("q", "quit", "Quit"),
+        Binding("Q", "quit", "Quit", show=False),
+        Binding("r", "refresh_data", "Refresh"),
+        Binding("R", "refresh_data", "Refresh", show=False),
+        Binding("~", "edit_selected", "Edit"),
+        Binding("-", "untrack_selected", "Untrack"),
+        Binding("k", "kill_selected", "Kill Selected"),
+        Binding("K", "kill_selected", "Kill Selected", show=False),
+        Binding("ctrl+k", "kill_all", "Kill ALL"),
+        Binding("d", "toggle_dark", "Toggle Theme"),
+        Binding("D", "toggle_dark", "Toggle Theme", show=False),
     ]
 
     target_ports = reactive(set())
@@ -67,8 +72,14 @@ class PortManagerApp(App):
             
             # MAIN CONTENT
             with Container(id="main_content"):
-                with Container(id="table_wrapper"):
-                    yield DataTable(id="ports_table")
+                with Horizontal(id="main_split"):
+                    with Container(id="table_wrapper"):
+                        yield DataTable(id="ports_table")
+                    
+                    with Vertical(id="process_details_panel"):
+                        yield Label("PROCESS INSPECTOR", id="details_title")
+                        with Container(id="details_content_box"):
+                            yield Label("Select a process to view details.", id="details_content")
                     
         yield Footer()
 
@@ -117,6 +128,7 @@ class PortManagerApp(App):
 
     def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         self.update_kill_button()
+        self.update_inspector()
 
     def update_kill_button(self) -> None:
         try:
@@ -156,6 +168,48 @@ class PortManagerApp(App):
         )
         try:
             self.query_one("#stats", Label).update(stats_msg)
+        except Exception:
+            pass
+
+    def update_inspector(self) -> None:
+        try:
+            table = self.query_one(DataTable)
+            row_key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key
+            if row_key.value is None:
+                return
+            idx = int(str(row_key.value))
+            proc = self.processes_data[idx]
+            
+            lbl = self.query_one("#details_content", Label)
+            
+            if proc["pid"] == "-" or not str(proc["pid"]).isdigit():
+                red = "#f38ba8" if self.app.dark else "#d20f39"
+                lbl.update(f"\n[bold {red}]PORT {proc['port']} IS INACTIVE[/]\n\nNo process is currently listening on this port.")
+                return
+                
+            details = get_process_details(proc["pid"])
+            if not details:
+                orange = "#fab387" if self.app.dark else "#df8e1d"
+                lbl.update(f"\n[bold {orange}]ACCESS DENIED[/]\n\nUnable to fetch detailed information for PID {proc['pid']}.")
+                return
+                
+            dt = datetime.datetime.fromtimestamp(details['created']).strftime("%Y-%m-%d %H:%M:%S")
+            mem = f"{details['memory']:.1f} MB"
+            cpu = f"{details['cpu']:.1f}%"
+            
+            accent = "#cba6f7" if self.app.dark else "#1e66f5"
+            content = (
+                f"[{accent} bold]Name:[/] {details['name']}\n"
+                f"[{accent} bold]PID:[/] {proc['pid']}\n"
+                f"[{accent} bold]Port:[/] {proc['port']}\n"
+                f"[{accent} bold]User:[/] {details.get('username', 'N/A')}\n"
+                f"[{accent} bold]Status:[/] {details.get('status', 'running').upper()}\n\n"
+                f"[{accent} bold]Memory:[/] {mem}\n"
+                f"[{accent} bold]CPU:[/] {cpu}\n"
+                f"[{accent} bold]Started:[/] \n{dt}\n\n"
+                f"[{accent} bold]Path:[/] \n{details.get('exe', 'Unknown')}"
+            )
+            lbl.update(content)
         except Exception:
             pass
 

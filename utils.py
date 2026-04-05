@@ -75,6 +75,24 @@ def get_running_processes(target_ports: set) -> list[dict]:
     results.sort(key=lambda x: x["port"])
     return results
 
+def get_process_details(pid: int) -> dict:
+    if not pid or not str(pid).isdigit():
+        return {}
+    try:
+        proc = psutil.Process(int(pid))
+        with proc.oneshot():
+            return {
+                "name": proc.name(),
+                "exe": proc.exe(),
+                "created": proc.create_time(),
+                "status": proc.status(),
+                "username": proc.username(),
+                "memory": proc.memory_info().rss / (1024 * 1024), # in MB
+                "cpu": proc.cpu_percent()
+            }
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        return {}
+
 def kill_process(pid: int) -> bool:
     try:
         proc = psutil.Process(pid)
