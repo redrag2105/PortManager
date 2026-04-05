@@ -1,35 +1,14 @@
-import sys
 from rich.text import Text
 from textual.app import App, ComposeResult
-from textual import on, events
-from textual.containers import Container, Horizontal, Vertical
-from textual.widgets import Header, Footer, DataTable, Button, Static, Label
-from textual.widgets._header import HeaderTitle
+from textual import on
+from textual.containers import Container, Horizontal
+from textual.widgets import Header, Footer, DataTable, Button, Label
 from textual.reactive import reactive
 from textual.binding import Binding
-import datetime
 
 from modals import ConfirmKillScreen, AddPortScreen, EditPortScreen
-from utils import get_target_ports, get_running_processes, get_process_details, kill_process, add_target_port, remove_target_port, edit_target_port
-
-# --- Monkeypatch HeaderTitle to support dynamic subtitle colors ---
-def custom_header_render(self) -> Text:
-    text = Text(self.text, no_wrap=True, overflow="ellipsis")
-    if self.sub_text:
-        text.append(" — ")
-        # Use different color based on theme
-        color = "#48495C" if self.app.dark else "#d0d3d8"
-        text.append(self.sub_text, style=f"italic {color}")
-    return text
-
-HeaderTitle.render = custom_header_render
-# ------------------------------------------------------------------
-
-LOGO = r"""
- ╭─╮┌─╮┬─╮┌┬┐
- ├─╯│ │├┬╯ │ 
- ┴  └─╯┴└─ ┴ 
-"""
+from utils import get_target_ports, get_running_processes, kill_process, add_multiple_target_ports, remove_target_port, edit_target_port
+from widgets import AppSidebar, AppTable, AppInspector
 
 class PortManagerApp(App):
     """A highly refined, modern Textual App for Port Management."""
@@ -56,30 +35,12 @@ class PortManagerApp(App):
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         with Horizontal(id="root_layout"):
+            yield AppSidebar(id="sidebar")
             
-            # SIDEBAR
-            with Vertical(id="sidebar"):
-                with Container(id="logo_box"):
-                    yield Static(LOGO, id="logo")
-                    yield Static("M A N A G E R", id="logo_manager")
-                with Container(id="stats_box"):
-                    yield Label("Loading stats...", id="stats")
-                with Vertical(id="button_group"):
-                    yield Button("+ Add Port", id="btn_add_port")
-                    yield Button("↻ Refresh", id="btn_refresh")
-                    yield Button("✕ Kill Selected", id="btn_kill_selected")
-                    yield Button("⚠ Kill All", id="btn_kill_all")
-            
-            # MAIN CONTENT
             with Container(id="main_content"):
                 with Horizontal(id="main_split"):
-                    with Container(id="table_wrapper"):
-                        yield DataTable(id="ports_table")
-                    
-                    with Vertical(id="process_details_panel"):
-                        yield Label("PROCESS INSPECTOR", id="details_title")
-                        with Container(id="details_content_box"):
-                            yield Label("Select a process to view details.", id="details_content")
+                    yield AppTable(id="table_wrapper")
+                    yield AppInspector(id="process_details_panel")
                     
         yield Footer()
 
@@ -92,24 +53,10 @@ class PortManagerApp(App):
         self.title = "PORT MANAGER"
         self.sub_title = "Network Guardian"
         
-        # Configure Table
-        table = self.query_one(DataTable)
-        table.cursor_type = "row"
-        table.zebra_stripes = True
-        
-        # Center align headers
-        table.add_columns(
-            Text("STATUS", justify="center"),
-            Text("PORT", justify="center"),
-            Text("PID", justify="center"),
-            Text("PROCESS", justify="center"),
-            Text("EDIT", justify="center"),
-            Text("DEL", justify="center"),
-        )
-
         self.action_refresh_data()
         
         # Trigger CSS mount animation and focus the table
+        table = self.query_one(DataTable)
         self.set_timer(0.05, lambda: table.add_class("-loaded"))
         self.set_timer(0.1, lambda: self.query_one("#sidebar").add_class("-loaded"))
         table.focus()
@@ -130,21 +77,32 @@ class PortManagerApp(App):
         self.update_kill_button()
         self.update_inspector()
 
-    def update_kill_button(self) -> None:
+    def _get_selected_process(self) -> dict | None:
+        """Helper to fetch the currently selected process struct from the DataTable."""
         try:
             table = self.query_one(DataTable)
+            if not table.cursor_coordinate:
+                return None
             row_key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key
             if row_key.value is None:
-                return
+                return None
             idx = int(str(row_key.value))
-            proc = self.processes_data[idx]
-            
-            btn_kill = self.query_one("#btn_kill_selected", Button)
-            btn_kill.disabled = (proc["status"] == "INACTIVE")
+            return self.processes_data[idx]
         except Exception:
+            return None
+
+    def update_kill_button(self) -> None:
+        proc = self._get_selected_process()
+        if proc:
+            try:
+                btn_kill = self.query_one("#btn_kill_selected", Button)
+                btn_kill.disabled = (proc["status"] == "INACTIVE")
+            except Exception:
+                pass
+        else:
             try:
                 self.query_one("#btn_kill_selected", Button).disabled = True
-            except:
+            except Exception:
                 pass
                 
         try:
@@ -157,89 +115,26 @@ class PortManagerApp(App):
                 pass
 
     def update_stats(self) -> None:
-        running = sum(1 for p in self.processes_data if p['status'] == 'RUNNING')
-        total = len(self.target_ports)
-        
-        active_color = "#a6e3a1" if self.app.dark else "#40a02b"
-        
-        stats_msg = (
-            f"Total tracked: [bold]{total}[/]\n"
-            f"Active ports : [bold {active_color}]{running}[/]"
-        )
         try:
-            self.query_one("#stats", Label).update(stats_msg)
+            sidebar = self.query_one(AppSidebar)
+            sidebar.update_stats(self.processes_data, self.target_ports, self.app.dark)
         except Exception:
             pass
 
     def update_inspector(self) -> None:
+        proc = self._get_selected_process()
         try:
-            table = self.query_one(DataTable)
-            row_key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key
-            if row_key.value is None:
-                return
-            idx = int(str(row_key.value))
-            proc = self.processes_data[idx]
-            
-            lbl = self.query_one("#details_content", Label)
-            
-            if proc["pid"] == "-" or not str(proc["pid"]).isdigit():
-                red = "#f38ba8" if self.app.dark else "#d20f39"
-                lbl.update(f"\n[bold {red}]PORT {proc['port']} IS INACTIVE[/]\n\nNo process is currently listening on this port.")
-                return
-                
-            details = get_process_details(proc["pid"])
-            if not details:
-                orange = "#fab387" if self.app.dark else "#df8e1d"
-                lbl.update(f"\n[bold {orange}]ACCESS DENIED[/]\n\nUnable to fetch detailed information for PID {proc['pid']}.")
-                return
-                
-            dt = datetime.datetime.fromtimestamp(details['created']).strftime("%Y-%m-%d %H:%M:%S")
-            mem = f"{details['memory']:.1f} MB"
-            cpu = f"{details['cpu']:.1f}%"
-            
-            accent = "#cba6f7" if self.app.dark else "#1e66f5"
-            content = (
-                f"[{accent} bold]Name:[/] {details['name']}\n"
-                f"[{accent} bold]PID:[/] {proc['pid']}\n"
-                f"[{accent} bold]Port:[/] {proc['port']}\n"
-                f"[{accent} bold]User:[/] {details.get('username', 'N/A')}\n"
-                f"[{accent} bold]Status:[/] {details.get('status', 'running').upper()}\n\n"
-                f"[{accent} bold]Memory:[/] {mem}\n"
-                f"[{accent} bold]CPU:[/] {cpu}\n"
-                f"[{accent} bold]Started:[/] \n{dt}\n\n"
-                f"[{accent} bold]Path:[/] \n{details.get('exe', 'Unknown')}"
-            )
-            lbl.update(content)
+            inspector = self.query_one(AppInspector)
+            inspector.update_inspector(proc, self.app.dark)
         except Exception:
             pass
 
     def update_table(self) -> None:
-        table = self.query_one(DataTable)
-        table.clear()
-        
-        is_dark = self.app.dark
-        active_col = "#a6e3a1" if is_dark else "#40a02b"
-        inactive_col = "#585b70" if is_dark else "#9ca0b0"
-        port_col = "bold #cba6f7" if is_dark else "bold #1e66f5"
-        pid_col = "#89b4fa" if is_dark else "#209fb5"
-        name_col = "bold" if is_dark else "bold #4c4f69"
-        
-        edit_col = "#fab387" if is_dark else "#df8e1d"
-        delete_col = "#f38ba8" if is_dark else "#d20f39"
-
-        for idx, proc in enumerate(self.processes_data):
-            # Clean, DRY rendering for active vs inactive ports
-            is_run = proc['status'] == 'RUNNING'
-            
-            table.add_row(
-                Text("●" if is_run else "○", style=active_col if is_run else inactive_col, justify="center"),
-                Text(str(proc['port']), style=port_col if is_run else inactive_col, justify="center"),
-                Text(str(proc['pid']), style=pid_col if is_run else inactive_col, justify="center"),
-                Text(str(proc['name']), style=name_col if is_run else inactive_col, justify="center"),
-                Text("~", style=edit_col, justify="center"),
-                Text("-", style=delete_col, justify="center"),
-                key=str(idx)
-            )
+        try:
+            table_widget = self.query_one(AppTable)
+            table_widget.populate_table(self.processes_data, self.app.dark)
+        except Exception:
+            pass
 
     @on(DataTable.RowSelected)
     def handle_row_selection(self, event: DataTable.RowSelected) -> None:
@@ -248,22 +143,15 @@ class PortManagerApp(App):
         if column is None:
             return
             
-        row_idx = int(str(event.row_key.value))
-        proc = self.processes_data[row_idx]
-        
         # Determine if click was on Edit or Untrack column
         if column == 4:
-            self.push_screen(EditPortScreen(self.target_ports, proc['port']),
-                             lambda new_port: self._handle_edit_port(proc['port'], new_port))
+            self.action_edit_selected()
         elif column == 5:
-            msg = f"Stop tracking port {proc['port']}?"
-            self.push_screen(
-                ConfirmKillScreen(msg, is_untrack=True),
-                lambda confirm: self._handle_untrack_port(proc['port']) if confirm else None
-            )
+            self.action_untrack_selected()
 
-    def _handle_edit_port(self, old_port: int, new_port: int | None) -> None:
-        if new_port is not None:
+    def _handle_edit_port(self, old_port: int, new_port_str: str | None) -> None:
+        if new_port_str is not None and new_port_str.isdigit():
+            new_port = int(new_port_str)
             if edit_target_port(old_port, new_port):
                 self.notify(f"Port {old_port} changed to {new_port}.", severity="information")
                 self.action_refresh_data()
@@ -278,42 +166,25 @@ class PortManagerApp(App):
             self.notify(f"Failed to remove port.", severity="error")
 
     def action_edit_selected(self) -> None:
-        table = self.query_one(DataTable)
-        try:
-            row_key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key
-            if row_key.value is None:
-                return
-            proc = self.processes_data[int(str(row_key.value))]
+        proc = self._get_selected_process()
+        if proc:
             self.push_screen(
                 EditPortScreen(self.target_ports, proc['port']),
                 lambda new_port: self._handle_edit_port(proc['port'], new_port)
             )
-        except Exception:
-            pass
 
     def action_untrack_selected(self) -> None:
-        table = self.query_one(DataTable)
-        try:
-            row_key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key
-            if row_key.value is None:
-                return
-            proc = self.processes_data[int(str(row_key.value))]
+        proc = self._get_selected_process()
+        if proc:
             msg = f"Stop tracking port {proc['port']}?"
             self.push_screen(
                 ConfirmKillScreen(msg, is_untrack=True),
                 lambda confirm: self._handle_untrack_port(proc['port']) if confirm else None
             )
-        except Exception:
-            pass
 
     def action_kill_selected(self) -> None:
-        table = self.query_one(DataTable)
-        try:
-            row_key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key
-            if row_key.value is None:
-                return
-            proc = self.processes_data[int(str(row_key.value))]
-            
+        proc = self._get_selected_process()
+        if proc:
             if proc["pid"] == "-" or not str(proc["pid"]).isdigit():
                 return
                 
@@ -322,8 +193,6 @@ class PortManagerApp(App):
                 ConfirmKillScreen(msg), 
                 lambda confirm: self._execute_kill([proc], f"Successfully killed {proc['name']}") if confirm else None
             )
-        except Exception:
-            pass
 
     def action_kill_all(self) -> None:
         running_procs = [p for p in self.processes_data if p["pid"] != "-" and str(p["pid"]).isdigit()]
@@ -359,13 +228,37 @@ class PortManagerApp(App):
         elif event.button.id == "btn_kill_all":
             self.action_kill_all()
             
-    def _handle_add_port(self, port: int | None) -> None:
-        if port is not None:
-            if add_target_port(port):
-                self.notify(f"Port {port} added!", severity="information")
-                self.action_refresh_data()
-            else:
-                self.notify(f"Could not add port {port}.", severity="error")
+    def _handle_add_port(self, raw_input: str | None) -> None:
+        if raw_input is None or not raw_input.strip():
+            return
+            
+        result = add_multiple_target_ports(raw_input)
+        
+        if "error" in result:
+            self.notify(f"Failed to save changes: {result['error']}", severity="error")
+            return
+            
+        added = result.get("added", [])
+        
+        if added:
+            msg = f"Successfully added {len(added)} port(s): {', '.join(added)}."
+            self.notify(msg, title="Ports Added", severity="information", timeout=4)
+        
+        # Process and show failures
+        failures = []
+        if result.get("failed_exists"):
+            failures.append(f"{', '.join(result['failed_exists'])} (Already monitored)")
+        if result.get("failed_range"):
+            failures.append(f"{', '.join(result['failed_range'])} (Out of 1-65535 range)")
+        if result.get("failed_invalid"):
+            failures.append(f"{', '.join(result['failed_invalid'])} (Not valid numbers)")
+            
+        if failures:
+            fail_msg = "\n".join(failures)
+            self.notify(fail_msg, title="Failed to Add", severity="warning", timeout=86400)
+            
+        if added:
+            self.action_refresh_data()
 
 if __name__ == "__main__":
     app = PortManagerApp()

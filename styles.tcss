@@ -80,9 +80,13 @@ Button {
     margin-bottom: 1;
     background: #313244;
     color: #cdd6f4;
-    border: none;
+    border: tall transparent;
     transition: background 200ms;
     text-style: bold;
+}
+
+Button:focus {
+    border: tall #cba6f7 !important;
 }
 
 /* Sidebar Buttons */
@@ -207,11 +211,7 @@ EditPortScreen {
 #dialog Button, #add_port_buttons Button {
     margin: 0;
     height: 3;
-}
-#dialog Button {
     width: 100%;
-    align: center middle;
-    content-align: center middle;
 }
 
 #question {
@@ -236,6 +236,10 @@ EditPortScreen {
     margin-bottom: 0;
 }
 
+#port_input:focus {
+    border: tall #cba6f7;
+}
+
 #validation_warning {
     color: #f38ba8;
     text-style: italic;
@@ -256,13 +260,13 @@ EditPortScreen {
 }
 
 /* Modal Buttons Colors */
-#kill, #add_port_cancel { background: #45475a; color: #f38ba8; border: none; }
+#kill, #add_port_cancel { background: #45475a; color: #f38ba8; border: tall transparent; }
 #kill:hover, #add_port_cancel:hover { background: #f38ba8; color: #11111b; }
 
-#add_port_confirm { background: #45475a; color: #a6e3a1; border: none; }
+#add_port_confirm { background: #45475a; color: #a6e3a1; border: tall transparent; }
 #add_port_confirm:hover { background: #a6e3a1; color: #11111b; }
 
-#cancel { background: #45475a; color: #89b4fa; border: none; }
+#cancel { background: #45475a; color: #89b4fa; border: tall transparent; }
 #cancel:hover { background: #89b4fa; color: #11111b; }
 
 
@@ -325,7 +329,17 @@ Screen:light #logo_manager { color: #8c8fa1; }
 Screen:light Button {
     background: #ccd0da;
     color: #4c4f69;
+    border: tall transparent;
 }
+
+Screen:light Button:focus {
+    border: tall #1e66f5 !important;
+}
+
+Screen:light #port_input:focus {
+    border: tall #1e66f5;
+}
+
 Screen:light #btn_add_port { color: #40a02b; }
 Screen:light #btn_add_port:hover { background: #40a02b; color: #eff1f5; }       
 Screen:light #btn_refresh { color: #1e66f5; }
@@ -396,14 +410,6 @@ Screen:light #cancel { color: #1e66f5; }
 Screen:light #cancel:hover { background: #1e66f5; color: #eff1f5; }
 
 Screen:light #add_port_confirm { color: #40a02b; }
-Screen:light #a
-Screen:light #kill, Screen:light #add_port_cancel { background: #ccd0da; color: #d20f39; }
-Screen:light #kill:hover, Screen:light #add_port_cancel:hover { background: #d20f39; color: #eff1f5; }
-
-Screen:light #cancel { background: #ccd0da; color: #1e66f5; }
-Screen:light #cancel:hover { background: #1e66f5; color: #eff1f5; }
-
-Screen:light #add_port_confirm { background: #ccd0da; color: #40a02b; }
 Screen:light #add_port_confirm:hover { background: #40a02b; color: #eff1f5; }
 
 /* Inspector Panel Light Mode */

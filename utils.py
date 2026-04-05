@@ -110,6 +110,48 @@ def kill_process(pid: int) -> bool:
         except Exception:
             return False
 
+def add_multiple_target_ports(raw_input: str) -> dict:
+    """Takes a space-separated string of ports, validates and adds them safely."""
+    tokens = raw_input.replace(',', ' ').split()
+    current_ports = get_target_ports()
+    
+    added = []
+    failed_exists = []
+    failed_invalid = []
+    failed_range = []
+    
+    for token in tokens:
+        if not token.isdigit():
+            failed_invalid.append(token)
+            continue
+            
+        port = int(token)
+        if not (1 <= port <= 65535):
+            failed_range.append(str(port))
+            continue
+            
+        if port in current_ports or port in added:
+            if str(port) not in failed_exists:
+                failed_exists.append(str(port))
+            continue
+            
+        added.append(port)
+        
+    if added:
+        try:
+            with open(_get_ports_file(), "a") as f:
+                for p in added:
+                    f.write(f"{p}\n")
+        except Exception:
+            return {"error": "File write error"}
+            
+    return {
+        "added": [str(a) for a in added],
+        "failed_invalid": failed_invalid,
+        "failed_range": failed_range,
+        "failed_exists": failed_exists
+    }
+
 def add_target_port(port: int) -> bool:
     """Adds a new port to ports.txt if it doesn't already exist."""
     current_ports = get_target_ports()
