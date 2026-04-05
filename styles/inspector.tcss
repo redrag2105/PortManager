@@ -1,0 +1,56 @@
+/* Process DETAILS PANEL */
+#process_details_panel {
+    height: 100%;
+    width: 35%;
+    background: #181825;
+    border: outer #cba6f7;
+    margin-left: 1;
+    border-title-color: #1e1e2e;
+    border-title-background: #cba6f7;
+    offset-y: 10;
+    opacity: 0.0;
+    transition: offset 300ms out_circ 50ms, opacity 300ms out_circ 50ms;        
+}
+
+#process_details_panel.-loaded {
+    offset-y: 0;
+    opacity: 1.0;
+}
+
+#details_title {
+    width: 100%;
+    text-align: center;
+    text-style: bold;
+    color: #1e1e2e;
+    background: #cba6f7;
+    padding: 0 1;
+}
+
+#details_content_box {
+    padding: 1 1;
+    height: 1fr;
+    width: 100%;
+}
+
+#details_content {
+    width: 100%;
+    height: 100%;
+    color: #cdd6f4;
+}
+
+/* Inspector Panel Light Mode */
+Screen:light #process_details_panel {
+    background: #e6e9ef;
+    border: outer #1e66f5;
+    border-title-background: #1e66f5;
+    border-title-color: #ffffff;
+}
+
+Screen:light #details_title {
+    color: #ffffff;
+    background: #1e66f5;
+}
+
+Screen:light #details_content {
+    color: #4c4f69;
+}

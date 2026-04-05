@@ -1,0 +1,125 @@
+Screen {
+    background: #1e1e2e;
+    color: #cdd6f4;
+}
+
+/* Header Styling */
+Header {
+    background: #cba6f7;
+    color: #1e1e2e;
+}
+HeaderIcon {
+    color: #d80000;
+}
+HeaderTitle {
+    color: #161620;
+    text-style: bold;
+}
+HeaderClock {
+    color: #ffffff;
+    background: #b979fd;
+}
+
+#root_layout {
+    layout: horizontal;
+    height: 100%;
+}
+
+/* Sidebar Styling */
+#sidebar {
+    width: 30;
+    height: 100%;
+    background: #181825;
+    padding: 0 2;
+    border-right: vkey #313244;
+    transition: offset 300ms out_circ, opacity 300ms out_circ;
+    offset-x: -30;
+    opacity: 0.0;
+}
+#sidebar.-loaded {
+    offset-x: 0;
+    opacity: 1.0;
+}
+#logo_box {
+    height: auto;
+    align: center top;
+    padding-top: 1;
+}
+#logo {
+    color: #cba6f7;
+    text-style: bold;
+    text-align: center;
+}
+#logo_manager {
+    color: #6c7086;
+    text-style: bold;
+    text-align: center;
+    width: 100%;
+}
+
+/* Stats */
+#stats_box {
+    height: auto;
+    background: #181825;
+    border-top: solid #cba6f7;
+    border-bottom: solid #cba6f7;
+    padding: 1;
+    margin-bottom: 1;
+}
+#stats {
+    width: 100%;
+    text-align: center;
+}
+
+/* Main Content Styling */
+#main_content {
+    width: 1fr;
+    height: 100%;
+    padding: 1 2;
+    background: #1e1e2e;
+}
+#main_split {
+    layout: horizontal;
+    height: 100%;
+    width: 100%;
+}
+
+/* Global and Layouts (Light) */
+Screen:light {
+    background: #eff1f5;
+    color: #4c4f69;
+}
+Screen:light #main_content {
+    background: #eff1f5;
+}
+Screen:light #sidebar {
+    background: #e6e9ef;
+    border-right: vkey #bcc0cc;
+}
+Screen:light #stats_box {
+    background: #e6e9ef;
+    border-top: solid #1e66f5;
+    border-bottom: solid #1e66f5;
+}
+
+/* Header (Light) */
+Screen:light Header {
+    background: #5e73ff;
+    color: #4c4f69;
+    border: none;
+}
+Screen:light HeaderIcon {
+    color: #ff98af;
+}
+Screen:light HeaderTitle {
+    color: #ffffff;
+}
+Screen:light HeaderClock {
+    color: #fbfbff;
+    background: #455dff;
+    border: none;
+}
+
+/* Logo (Light) */
+Screen:light #logo { color: #1e66f5; }
+Screen:light #logo_manager { color: #8c8fa1; }

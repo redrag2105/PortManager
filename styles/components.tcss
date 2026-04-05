@@ -1,0 +1,81 @@
+/* Common Button Styling */
+#button_group {
+    height: auto;
+    align: center top;
+}
+Button {
+    width: 100%;
+    height: 3;
+    margin-bottom: 1;
+    background: #313244;
+    color: #cdd6f4;
+    border: tall transparent;
+    transition: background 300ms in_out_cubic, color 300ms in_out_cubic, border 200ms in_out_sine;
+    text-style: bold;
+}
+
+Button:focus {
+    border: tall #cba6f7 !important;
+}
+
+Input {
+    transition: border 200ms in_out_sine;
+}
+
+/* Sidebar Buttons */
+#btn_add_port { color: #a6e3a1; }
+#btn_add_port:hover { background: #a6e3a1; color: #11111b; }
+
+#btn_refresh { color: #89b4fa; }
+#btn_refresh:hover { background: #89b4fa; color: #11111b; }
+
+#btn_kill_selected { color: #fab387; }
+#btn_kill_selected:hover { background: #fab387; color: #11111b; }
+#btn_kill_selected:disabled { color: #6c7086; }
+
+#btn_kill_all { color: #f38ba8; }
+#btn_kill_all:hover { background: #f38ba8; color: #11111b; }
+#btn_kill_all:disabled { color: #6c7086; }
+
+/* Toasts */
+ToastRack {
+    align: right bottom;
+    margin-bottom: 2;
+    margin-right: 2;
+}
+Toast {
+    opacity: 0.0;
+    offset-x: 50;
+    margin-top: 1;
+    transition: offset 200ms out_circ, opacity 250ms out_circ;
+}
+Toast.-loaded {
+    opacity: 0.95;
+    offset-x: 0;
+}
+Toast.toast--closing {
+    offset-x: 50;
+    opacity: 0.0;
+}
+
+/* General Buttons (Light) */
+Screen:light Button {
+    background: #ccd0da;
+    color: #4c4f69;
+    border: tall transparent;
+}
+
+Screen:light Button:focus {
+    border: tall #1e66f5 !important;
+}
+
+Screen:light #btn_add_port { color: #40a02b; }
+Screen:light #btn_add_port:hover { background: #40a02b; color: #eff1f5; }       
+Screen:light #btn_refresh { color: #1e66f5; }
+Screen:light #btn_refresh:hover { background: #1e66f5; color: #eff1f5; }        
+Screen:light #btn_kill_selected { color: #df8e1d; }
+Screen:light #btn_kill_selected:hover { background: #df8e1d; color: #eff1f5; }  
+Screen:light #btn_kill_selected:disabled { background: #cfd3df; color: #aaabb8; }
+Screen:light #btn_kill_all { color: #d20f39; }
+Screen:light #btn_kill_all:hover { background: #d20f39; color: #eff1f5; }       
+Screen:light #btn_kill_all:disabled { background: #cfd3df; color: #aaabb8; }    

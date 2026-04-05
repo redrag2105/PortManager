@@ -1,19 +1,24 @@
+from typing import TypeVar, Generic
 from textual.app import ComposeResult
 from textual.containers import Grid, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Input
 from textual.binding import Binding
 
-class ConfirmKillScreen(ModalScreen[bool]):
-    """Screen with a dialog to confirm an action (process termination or untracking)."""
+ResultType = TypeVar("ResultType")
 
-    CSS_PATH = "styles.tcss"
+class BaseSharedModal(ModalScreen[ResultType]):
+    """Base class for all modals to apply shared CSS, Bindings, and behaviors."""
+    CSS_PATH = ["styles/modals.tcss", "styles/components.tcss"]
 
     BINDINGS = [
         Binding("escape", "dismiss_modal", "Cancel", show=False),
         Binding("left", "focus_previous", "Previous", show=False),
         Binding("right", "focus_next", "Next", show=False),
     ]
+
+class ConfirmKillScreen(BaseSharedModal[bool]):
+    """Screen with a dialog to confirm an action (process termination or untracking)."""
 
     def __init__(self, message: str, is_untrack: bool = False):
         super().__init__()
@@ -37,16 +42,8 @@ class ConfirmKillScreen(ModalScreen[bool]):
             self.dismiss(False)
 
 
-class BasePortScreen(ModalScreen[str | None]):
-    """Base screen containing shared logic for Adding and Editing ports."""
-
-    CSS_PATH = "styles.tcss"
-
-    BINDINGS = [
-        Binding("escape", "dismiss_modal", "Cancel"),
-        Binding("left", "focus_previous", "Previous", show=False),
-        Binding("right", "focus_next", "Next", show=False),
-    ]
+class BasePortScreen(BaseSharedModal[str | None]):
+    """Base screen containing shared logic for Adding and Editing ports."""     
 
     def __init__(self, current_ports: set[int], old_port: int | None = None):
         super().__init__()

@@ -13,20 +13,22 @@ from widgets import AppSidebar, AppTable, AppInspector
 class PortManagerApp(App):
     """A highly refined, modern Textual App for Port Management."""
     
-    CSS_PATH = 'styles.tcss'
+    CSS_PATH = ["styles/layout.tcss", "styles/components.tcss", "styles/table.tcss", "styles/inspector.tcss", "styles/modals.tcss"]
 
     BINDINGS = [
         Binding("q", "quit", "Quit"),
         Binding("Q", "quit", "Quit", show=False),
         Binding("r", "refresh_data", "Refresh"),
         Binding("R", "refresh_data", "Refresh", show=False),
+        Binding("+", "add_port", "Add"),
+        Binding("=", "add_port", "Add", show=False),
         Binding("~", "edit_selected", "Edit"),
         Binding("-", "untrack_selected", "Untrack"),
         Binding("k", "kill_selected", "Kill Selected"),
         Binding("K", "kill_selected", "Kill Selected", show=False),
         Binding("ctrl+k", "kill_all", "Kill ALL"),
-        Binding("d", "toggle_dark", "Toggle Theme"),
-        Binding("D", "toggle_dark", "Toggle Theme", show=False),
+        Binding("n", "toggle_dark", "Toggle Theme"),
+        Binding("N", "toggle_dark", "Toggle Theme", show=False),
     ]
 
     target_ports = reactive(set())
@@ -56,9 +58,12 @@ class PortManagerApp(App):
         self.action_refresh_data()
         
         # Trigger CSS mount animation and focus the table
-        table = self.query_one(DataTable)
-        self.set_timer(0.05, lambda: table.add_class("-loaded"))
+        table_wrapper = self.query_one("#table_wrapper")
+        self.set_timer(0.05, lambda: table_wrapper.add_class("-loaded"))
         self.set_timer(0.1, lambda: self.query_one("#sidebar").add_class("-loaded"))
+        self.set_timer(0.15, lambda: self.query_one("#process_details_panel").add_class("-loaded"))
+        
+        table = self.query_one(DataTable)
         table.focus()
 
     def action_toggle_dark(self) -> None:
@@ -220,13 +225,16 @@ class PortManagerApp(App):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn_add_port":
-            self.push_screen(AddPortScreen(self.target_ports), self._handle_add_port)
+            self.action_add_port()
         elif event.button.id == "btn_refresh":
             self.action_refresh_data()
         elif event.button.id == "btn_kill_selected":
             self.action_kill_selected()
         elif event.button.id == "btn_kill_all":
             self.action_kill_all()
+
+    def action_add_port(self) -> None:
+        self.push_screen(AddPortScreen(self.target_ports), self._handle_add_port)
             
     def _handle_add_port(self, raw_input: str | None) -> None:
         if raw_input is None or not raw_input.strip():

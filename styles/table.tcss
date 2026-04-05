@@ -1,0 +1,52 @@
+/* DataTable */
+#table_wrapper {
+    height: 100%;
+    width: 65%;
+    margin-right: 1;
+    offset-y: 10;
+    opacity: 0.0;
+    transition: offset 300ms out_circ, opacity 300ms out_circ;
+}
+#table_wrapper.-loaded {
+    offset-y: 0;
+    opacity: 1.0;
+}
+
+DataTable {
+    height: 100%;
+    background: #1e1e2e;
+    border: outer #45475a;
+    border-title-color: #f38ba8;
+    transition: border 200ms in_out_sine;
+}
+
+DataTable:focus {
+    border: outer #cba6f7;
+}
+DataTable.-loaded {
+    opacity: 1.0;
+}
+DataTable > .datatable--cursor {
+    background: #313244 !important;
+    text-style: bold;
+}
+DataTable > .datatable--hover {
+    background: #181825 !important;
+}
+
+/* DataTable (Light) */
+Screen:light DataTable {
+    background: #eff1f5;
+    border: outer #bcc0cc;
+    border-title-color: #1e66f5;
+    color: #4c4f69;
+}
+Screen:light DataTable:focus {
+    border: outer #1e66f5;
+}
+Screen:light DataTable > .datatable--cursor {
+    background: #bcc0cc !important;
+}
+Screen:light DataTable > .datatable--hover {
+    background: #e6e9ef !important;
+}
