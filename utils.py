@@ -22,10 +22,14 @@ def _write_ports(lines: list[str]) -> bool:
     except Exception:
         return False
 
+def _parse_port_line(line: str) -> str:
+    """Extracts the port number from a line, ignoring comments and whitespace."""
+    return line.strip().split("#")[0].strip()
+
 def get_target_ports() -> set:
     ports = set()
     for line in _read_ports():
-        cleaned = line.strip().split("#")[0].strip() # ignore comments      
+        cleaned = _parse_port_line(line)
         if cleaned and cleaned.isdigit():
             ports.add(int(cleaned))
     return ports
@@ -152,25 +156,13 @@ def add_multiple_target_ports(raw_input: str) -> dict:
         "failed_exists": failed_exists
     }
 
-def add_target_port(port: int) -> bool:
-    """Adds a new port to ports.txt if it doesn't already exist."""
-    current_ports = get_target_ports()
-    if port in current_ports:
-        return False
-    try:
-        with open(_get_ports_file(), "a") as f:
-            f.write(f"{port}\n")
-        return True
-    except Exception:
-        return False
-
 def remove_target_port(port: int) -> bool:
     """Removes a port from ports.txt."""
     lines = _read_ports()
     new_lines = []
     port_removed = False
     for line in lines:
-        cleaned = line.strip().split("#")[0].strip()
+        cleaned = _parse_port_line(line)
         if cleaned and cleaned.isdigit() and int(cleaned) == port:
             port_removed = True
             continue # Skip adding this line back
@@ -191,12 +183,6 @@ def edit_target_port(old_port: int, new_port: int) -> bool:
     new_lines = []
     port_edited = False
     for line in lines:
-        cleaned = line.strip().split("#")[0].strip()
-        if cleaned and cleaned.isdigit() and int(cleaned) == old_port:      
-            # Replace the number but preserve comments/newlines after it    
-            idx = line.find(cleaned)
-            line = line[:idx] + str(new_port) + line[idx+len(cleaned):]     
-            port_edited = True
-        new_lines.append(line)
+        cleaned = _parse_port_line(line)
 
     return _write_ports(new_lines) if port_edited else False

@@ -1,16 +1,16 @@
-from rich.text import Text
 from textual.app import App, ComposeResult
 from textual import on
 from textual.containers import Container, Horizontal
-from textual.widgets import Header, Footer, DataTable, Button, Label
+from textual.widgets import Header, Footer, DataTable, Button
 from textual.reactive import reactive
 from textual.binding import Binding
 
 from modals import ConfirmKillScreen, AddPortScreen, EditPortScreen
+from forwarding_logic import PortForwardingMixin
 from utils import get_target_ports, get_running_processes, kill_process, add_multiple_target_ports, remove_target_port, edit_target_port
 from widgets import AppSidebar, AppTable, AppInspector
 
-class PortManagerApp(App):
+class PortManagerApp(PortForwardingMixin, App):
     """A highly refined, modern Textual App for Port Management."""
     
     CSS_PATH = ["styles/layout.tcss", "styles/components.tcss", "styles/table.tcss", "styles/inspector.tcss", "styles/modals.tcss"]
@@ -29,10 +29,13 @@ class PortManagerApp(App):
         Binding("ctrl+k", "kill_all", "Kill ALL"),
         Binding("n", "toggle_dark", "Toggle Theme"),
         Binding("N", "toggle_dark", "Toggle Theme", show=False),
+        Binding("f", "toggle_forward", "Toggle FWD"),
+        Binding("F", "toggle_forward", "Toggle FWD", show=False)
     ]
 
     target_ports = reactive(set())
     processes_data = reactive([])
+    forwarded_ports = reactive({})
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -66,6 +69,11 @@ class PortManagerApp(App):
         table = self.query_one(DataTable)
         table.focus()
 
+    
+    def watch_forwarded_ports(self, old_val, new_val) -> None:
+        self.update_table()
+        self.update_inspector()
+
     def action_toggle_dark(self) -> None:
         self.dark = not self.dark
         self.update_table()
@@ -97,63 +105,44 @@ class PortManagerApp(App):
             return None
 
     def update_kill_button(self) -> None:
-        proc = self._get_selected_process()
-        if proc:
-            try:
-                btn_kill = self.query_one("#btn_kill_selected", Button)
-                btn_kill.disabled = (proc["status"] == "INACTIVE")
-            except Exception:
-                pass
-        else:
-            try:
-                self.query_one("#btn_kill_selected", Button).disabled = True
-            except Exception:
-                pass
+        try:
+            proc = self._get_selected_process()
+            self.query_one("#btn_kill_selected", Button).disabled = not proc or proc["status"] == "INACTIVE"
+        except Exception:
+            pass
                 
         try:
             running_procs = sum(1 for p in self.processes_data if p["status"] == "RUNNING")
             self.query_one("#btn_kill_all", Button).disabled = (running_procs == 0)
         except Exception:
-            try:
-                self.query_one("#btn_kill_all", Button).disabled = True
-            except:
-                pass
+            pass
 
     def update_stats(self) -> None:
         try:
-            sidebar = self.query_one(AppSidebar)
-            sidebar.update_stats(self.processes_data, self.target_ports, self.app.dark)
-        except Exception:
-            pass
-
-    def update_inspector(self) -> None:
-        proc = self._get_selected_process()
-        try:
-            inspector = self.query_one(AppInspector)
-            inspector.update_inspector(proc, self.app.dark)
+            self.query_one(AppSidebar).update_stats(self.processes_data, self.target_ports)
         except Exception:
             pass
 
     def update_table(self) -> None:
         try:
-            table_widget = self.query_one(AppTable)
-            table_widget.populate_table(self.processes_data, self.app.dark)
+            self.query_one(AppTable).populate_table(self.processes_data, self.forwarded_ports)
         except Exception:
             pass
 
     @on(DataTable.RowSelected)
-    def handle_row_selection(self, event: DataTable.RowSelected) -> None:
+    async def handle_row_selection(self, event: DataTable.RowSelected) -> None:
         table = self.query_one(DataTable)
         column = table.cursor_coordinate.column if table.cursor_coordinate else None
         if column is None:
             return
-            
+
         # Determine if click was on Edit or Untrack column
         if column == 4:
             self.action_edit_selected()
         elif column == 5:
             self.action_untrack_selected()
-
+        elif column == 6:
+            await self.action_toggle_forward()
     def _handle_edit_port(self, old_port: int, new_port_str: str | None) -> None:
         if new_port_str is not None and new_port_str.isdigit():
             new_port = int(new_port_str)
@@ -170,18 +159,34 @@ class PortManagerApp(App):
         else:
             self.notify(f"Failed to remove port.", severity="error")
 
+    def _is_forwarding_selected(self) -> bool:
+        proc = self._get_selected_process()
+        return bool(proc and self.forwarded_ports.get(proc['port']))
+
+    def check_action_edit_selected(self) -> bool:
+        return not self._is_forwarding_selected()
+
+    def check_action_untrack_selected(self) -> bool:
+        return not self._is_forwarding_selected()
+
     def action_edit_selected(self) -> None:
+        if self._is_forwarding_selected():
+            return
         proc = self._get_selected_process()
         if proc:
+            self.clear_notifications()
             self.push_screen(
                 EditPortScreen(self.target_ports, proc['port']),
                 lambda new_port: self._handle_edit_port(proc['port'], new_port)
             )
 
     def action_untrack_selected(self) -> None:
+        if self._is_forwarding_selected():
+            return
         proc = self._get_selected_process()
         if proc:
             msg = f"Stop tracking port {proc['port']}?"
+            self.clear_notifications()
             self.push_screen(
                 ConfirmKillScreen(msg, is_untrack=True),
                 lambda confirm: self._handle_untrack_port(proc['port']) if confirm else None
@@ -189,15 +194,15 @@ class PortManagerApp(App):
 
     def action_kill_selected(self) -> None:
         proc = self._get_selected_process()
-        if proc:
-            if proc["pid"] == "-" or not str(proc["pid"]).isdigit():
-                return
-                
-            msg = f"Terminate Process: {proc['name']}\nRunning on Port: {proc['port']} (PID: {proc['pid']})?"
-            self.push_screen(
-                ConfirmKillScreen(msg), 
-                lambda confirm: self._execute_kill([proc], f"Successfully killed {proc['name']}") if confirm else None
-            )
+        if not proc or proc.get("pid") == "-" or not str(proc.get("pid")).isdigit():
+            return
+            
+        msg = f"Terminate Process: {proc['name']}\nRunning on Port: {proc['port']} (PID: {proc['pid']})?"
+        self.clear_notifications()
+        self.push_screen(
+            ConfirmKillScreen(msg), 
+            lambda confirm: self._execute_kill([proc], f"Successfully killed {proc['name']}") if confirm else None
+        )
 
     def action_kill_all(self) -> None:
         running_procs = [p for p in self.processes_data if p["pid"] != "-" and str(p["pid"]).isdigit()]
@@ -206,6 +211,7 @@ class PortManagerApp(App):
             return
 
         msg = f"Proceed destroying ALL {len(running_procs)} processes?"
+        self.clear_notifications()
         self.push_screen(
             ConfirmKillScreen(msg), 
             lambda confirm: self._execute_kill(running_procs, "Killed {} active process(es)") if confirm else None
@@ -234,6 +240,7 @@ class PortManagerApp(App):
             self.action_kill_all()
 
     def action_add_port(self) -> None:
+        self.clear_notifications()
         self.push_screen(AddPortScreen(self.target_ports), self._handle_add_port)
             
     def _handle_add_port(self, raw_input: str | None) -> None:
@@ -267,6 +274,15 @@ class PortManagerApp(App):
             
         if added:
             self.action_refresh_data()
+
+
+    def update_inspector(self) -> None:
+        try:
+            proc = self._get_selected_process()
+            url = self.forwarded_ports.get(proc['port']) if proc else None
+            self.query_one(AppInspector).update_inspector(proc, url)
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     app = PortManagerApp()

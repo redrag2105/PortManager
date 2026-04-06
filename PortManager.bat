@@ -9,3 +9,5 @@ if exist venv\Scripts\python.exe (
 ) else (
     python main.py
 )
+
+pause

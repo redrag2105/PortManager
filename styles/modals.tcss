@@ -1,7 +1,9 @@
 /* Modals - Common Background & Alignment */
 ConfirmKillScreen,
 AddPortScreen,
-EditPortScreen {
+EditPortScreen,
+DevTunnelInstallScreen,
+DevTunnelAuthScreen {
     align: center middle;
     background: #1e1e2ebe;
 }
@@ -91,17 +93,23 @@ EditPortScreen {
 /* Modals Light */
 ConfirmKillScreen:light,
 AddPortScreen:light,
-EditPortScreen:light {
+EditPortScreen:light,
+DevTunnelInstallScreen:light,
+DevTunnelAuthScreen:light {
     background: #eff1f5be;
 }
 
 ConfirmKillScreen:light #dialog,
+DevTunnelInstallScreen:light #dialog,
+DevTunnelAuthScreen:light #dialog,
 AddPortScreen:light #add_port_dialog,
 EditPortScreen:light #add_port_dialog {
     background: #e6e9ef;
 }
 
-ConfirmKillScreen:light #dialog {
+ConfirmKillScreen:light #dialog,
+DevTunnelInstallScreen:light #dialog,
+DevTunnelAuthScreen:light #dialog {
     border: thick #d20f39 80%;
 }
 AddPortScreen:light #add_port_dialog,
@@ -109,7 +117,9 @@ EditPortScreen:light #add_port_dialog {
     border: thick #40a02b 80%;
 }
 
-ConfirmKillScreen:light #question {
+ConfirmKillScreen:light #question,
+DevTunnelInstallScreen:light #question,
+DevTunnelAuthScreen:light #question {
     color: #4c4f69;
 }
 AddPortScreen:light #add_port_title,

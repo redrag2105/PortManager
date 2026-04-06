@@ -50,6 +50,21 @@ LOGO = r"""
  ┴  └─╯┴└─ ┴ 
 """
 
+class ThemeColors:
+    """Helper to extract and DRY up theme colors."""
+    @staticmethod
+    def get(is_dark: bool) -> dict:
+        return {
+            "active": "#a6e3a1" if is_dark else "#40a02b",
+            "inactive": "#585b70" if is_dark else "#9ca0b0",
+            "port": "bold #cba6f7" if is_dark else "bold #1e66f5",
+            "pid": "#89b4fa" if is_dark else "#209fb5",
+            "name": "bold" if is_dark else "bold #4c4f69",
+            "edit": "#fab387" if is_dark else "#df8e1d",
+            "delete": "#f38ba8" if is_dark else "#d20f39",
+            "accent": "#cba6f7" if is_dark else "#1e66f5"
+        }
+
 class AppSidebar(Vertical):
     """The sidebar containing the logo, connection stats, and primary action buttons."""
     
@@ -65,11 +80,12 @@ class AppSidebar(Vertical):
             yield Button("✕ Kill Selected", id="btn_kill_selected")
             yield Button("⚠ Kill All", id="btn_kill_all")
 
-    def update_stats(self, processes_data: list, target_ports: set, is_dark: bool) -> None:
+    def update_stats(self, processes_data: list, target_ports: set) -> None:
         running = sum(1 for p in processes_data if p['status'] == 'RUNNING')
         total = len(target_ports)
+        is_dark = getattr(self.app, "dark", True)
         
-        active_color = "#a6e3a1" if is_dark else "#40a02b"
+        active_color = ThemeColors.get(is_dark)["active"]
         stats_msg = (
             f"Total tracked: [bold]{total}[/]\n"
             f"Active ports : [bold {active_color}]{running}[/]"
@@ -94,34 +110,50 @@ class AppTable(Container):
             Text("STATUS", justify="center"),
             Text("PORT", justify="center"),
             Text("PID", justify="center"),
-            Text("PROCESS", justify="center"),
-            Text("MOD", justify="center"),
-            Text("DEL", justify="center"),
         )
 
-    def populate_table(self, processes_data: list, is_dark: bool) -> None:
+        table.add_column(Text("PROCESS", justify="center"), width=15)
+        
+        table.add_columns(
+            Text("MOD", justify="center"),
+            Text("DEL", justify="center"),
+            Text("FWD", justify="center"),
+        )
+
+    def populate_table(self, processes_data: list, forwarded_ports: dict | None = None) -> None:
+        if forwarded_ports is None:
+            forwarded_ports = {}
         table = self.query_one(DataTable)
         table.clear()
         
-        active_col = "#a6e3a1" if is_dark else "#40a02b"
-        inactive_col = "#585b70" if is_dark else "#9ca0b0"
-        port_col = "bold #cba6f7" if is_dark else "bold #1e66f5"
-        pid_col = "#89b4fa" if is_dark else "#209fb5"
-        name_col = "bold" if is_dark else "bold #4c4f69"
-        
-        edit_col = "#fab387" if is_dark else "#df8e1d"
-        delete_col = "#f38ba8" if is_dark else "#d20f39"
+        is_dark = getattr(self.app, "dark", True)
+        c = ThemeColors.get(is_dark)
 
         for idx, proc in enumerate(processes_data):
             is_run = proc['status'] == 'RUNNING'
-            
+            fwd_status = forwarded_ports.get(proc['port'])
+
+            fwd_text = "[ ]"
+            fwd_style = c["inactive"]
+            if fwd_status == "loading":
+                fwd_text = "[?]"
+                fwd_style = c["edit"]
+            elif fwd_status:
+                fwd_text = "[x]"
+                fwd_style = c["active"]
+                
+            is_forwarding = bool(fwd_status)
+            edit_text_col = c["inactive"] if is_forwarding else c["edit"]
+            delete_text_col = c["inactive"] if is_forwarding else c["delete"]
+
             table.add_row(
-                Text("●" if is_run else "○", style=active_col if is_run else inactive_col, justify="center"),
-                Text(str(proc['port']), style=port_col if is_run else inactive_col, justify="center"),
-                Text(str(proc['pid']), style=pid_col if is_run else inactive_col, justify="center"),
-                Text(str(proc['name']), style=name_col if is_run else inactive_col, justify="center"),
-                Text("~", style=edit_col, justify="center"),
-                Text("-", style=delete_col, justify="center"),
+                Text("●" if is_run else "○", style=c["active"] if is_run else c["inactive"], justify="center"),
+                Text(str(proc['port']), style=c["port"] if is_run else c["inactive"], justify="center"),
+                Text(str(proc['pid']), style=c["pid"] if is_run else c["inactive"], justify="center"),
+                Text(str(proc['name']), style=c["name"] if is_run else c["inactive"], justify="center"),
+                Text("~", style=edit_text_col, justify="center"),
+                Text("-", style=delete_text_col, justify="center"),
+                Text(fwd_text, style=fwd_style, justify="center"),
                 key=str(idx)
             )
 
@@ -133,29 +165,29 @@ class AppInspector(Vertical):
         with Container(id="details_content_box"):
             yield Label("Select a process to view details.", id="details_content")
 
-    def update_inspector(self, proc: dict | None, is_dark: bool) -> None:
+    def update_inspector(self, proc: dict | None, public_url: str | tuple[str, str] | None = None) -> None:
         if not proc:
             return
             
         try:
             lbl = self.query_one("#details_content", Label)
+            is_dark = getattr(self.app, "dark", True)
+            c = ThemeColors.get(is_dark)
             
             if proc["pid"] == "-" or not str(proc["pid"]).isdigit():
-                red = "#f38ba8" if is_dark else "#d20f39"
-                lbl.update(f"\n[bold {red}]PORT {proc['port']} IS INACTIVE[/]\n\nNo process is currently listening on this port.")
+                lbl.update(f"\n[bold {c['delete']}]PORT {proc['port']} IS INACTIVE[/]\n\nNo process is currently listening on this port.")
                 return
                 
             details = get_process_details(proc["pid"])
             if not details:
-                orange = "#fab387" if is_dark else "#df8e1d"
-                lbl.update(f"\n[bold {orange}]ACCESS DENIED[/]\n\nUnable to fetch detailed information for PID {proc['pid']}.")
+                lbl.update(f"\n[bold {c['edit']}]ACCESS DENIED[/]\n\nUnable to fetch detailed information for PID {proc['pid']}.")
                 return
                 
             dt = datetime.datetime.fromtimestamp(details['created']).strftime("%Y-%m-%d %H:%M:%S")
             mem = f"{details['memory']:.1f} MB"
             cpu = f"{details['cpu']:.1f}%"
             
-            accent = "#cba6f7" if is_dark else "#1e66f5"
+            accent = c['accent']
             content = (
                 f"[{accent} bold]Name:[/] {details['name']}\n"
                 f"[{accent} bold]PID:[/] {proc['pid']}\n"
@@ -167,6 +199,13 @@ class AppInspector(Vertical):
                 f"[{accent} bold]Started:[/] \n{dt}\n\n"
                 f"[{accent} bold]Path:[/] \n{details.get('exe', 'Unknown')}"
             )
+            if public_url and public_url != "loading":
+                if isinstance(public_url, tuple):
+                    content += f"\n\n[{accent} bold]Public URL:[/] \n[link={public_url[0]}]{public_url[0]}[/link]"
+                    if len(public_url) > 1:
+                        content += f"\n\n[{accent} bold]Inspect URL:[/] \n[link={public_url[1]}]{public_url[1]}[/link]"
+                else:
+                    content += f"\n\n[{accent} bold]Public URL:[/] \n[link={public_url}]{public_url}[/link]"
             lbl.update(content)
         except Exception:
             pass
