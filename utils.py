@@ -4,7 +4,7 @@ from pathlib import Path
 def _get_ports_file() -> Path:
     ports_file = Path("ports.txt")
     if not ports_file.exists():
-        ports_file.write_text("3000\n3001\n3002\n3003\n3004\n3005\n")       
+        ports_file.write_text("3000\n5173\n")       
     return ports_file
 
 def _read_ports() -> list[str]:

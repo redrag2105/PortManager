@@ -59,6 +59,18 @@ class ConfirmKillScreen(ActionModalScreen):
             no_id="cancel"
         )
 
+class ConfirmStopForwardingScreen(ActionModalScreen):
+    """Screen with a dialog to confirm stopping port forwarding."""
+    def __init__(self, port: int):
+        super().__init__(
+            message=f"Are you sure you want to close the public tunnel for port {port}?",
+            ok_text="Stop Forwarding",
+            no_text="Cancel",
+            ok_id="stop_forward",
+            no_id="cancel"
+        )
+
+
 
 class BasePortScreen(BaseSharedModal[str | None]):
     """Base screen containing shared logic for Adding and Editing ports."""     

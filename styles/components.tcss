@@ -10,7 +10,7 @@ Button {
     background: #313244;
     color: #cdd6f4;
     border: tall transparent;
-    transition: background 300ms in_out_cubic, color 300ms in_out_cubic, border 200ms in_out_sine;
+    transition: background 160ms in_out_cubic, color 160ms in_out_cubic, border 200ms in_out_sine;
     text-style: bold;
 }
 

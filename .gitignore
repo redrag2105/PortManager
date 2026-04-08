@@ -12,3 +12,6 @@ dist/
 
 # Local Data/Config 
 ports.txt
+
+# MS Dev Tunnels
+devtunnel.exe

@@ -26,11 +26,16 @@ class PortForwardingMixin(_BaseApp):
 
         if fwd_status:
             # Stop port forwarding
-            if await devtunnel_utils.stop_port_forward(port):
-                fwd = dict(self.forwarded_ports)
-                fwd.pop(port, None)
-                self.forwarded_ports = fwd
-                self.notify(f"Port {port} forwarding stopped.", severity="information")
+            from modals import ConfirmStopForwardingScreen
+            async def _handle_confirm(confirm: bool):
+                if confirm:
+                    if await devtunnel_utils.stop_port_forward(port):
+                        fwd = dict(self.forwarded_ports)
+                        fwd.pop(port, None)
+                        self.forwarded_ports = fwd
+                        self.notify(f"Port {port} forwarding stopped.", severity="information")
+
+            self.app.push_screen(ConfirmStopForwardingScreen(port), _handle_confirm)
             return
 
         # Not forwarded yet. Start DevTunnel logic
