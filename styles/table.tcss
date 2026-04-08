@@ -27,11 +27,11 @@ DataTable.-loaded {
     opacity: 1.0;
 }
 DataTable > .datatable--cursor {
-    background: #313244 !important;
+    background: #313244;
     text-style: bold;
 }
 DataTable > .datatable--hover {
-    background: #181825 !important;
+    background: #181825;
 }
 
 /* DataTable (Light) */
@@ -45,8 +45,8 @@ Screen:light DataTable:focus {
     border: outer #1e66f5;
 }
 Screen:light DataTable > .datatable--cursor {
-    background: #bcc0cc !important;
+    background: #bcc0cc;
 }
 Screen:light DataTable > .datatable--hover {
-    background: #e6e9ef !important;
+    background: #cfd2db;
 }

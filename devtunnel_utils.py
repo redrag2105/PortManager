@@ -62,17 +62,21 @@ def download_devtunnel_cli() -> bool:
         print(f"Failed to download devtunnel: {e}")
         return False
 
-def check_login_status() -> bool:
-    """3. Check Login: Run devtunnel user show to determine authentication."""
+def check_login_status() -> str:
+    """3. Check Login: Run devtunnel user show to determine authentication.
+    Returns 'logged_in', 'logged_out', or 'expired'.
+    """
     path = get_devtunnel_path()
     try:
         result = subprocess.run([path, 'user', 'show'], capture_output=True, text=True)
-        # Usually checking output or return code to verify authentication
+        # Check output or return code to verify authentication
+        if 'Login token expired' in result.stdout or 'Login token expired' in result.stderr:
+            return 'expired'
         if result.returncode != 0 or 'Not logged in' in result.stdout:
-            return False
-        return True
+            return 'logged_out'
+        return 'logged_in'
     except FileNotFoundError:
-        return False
+        return 'logged_out'
 
 def trigger_login() -> bool:
     """3. Trigger Login: trigger the GitHub device login flow."""

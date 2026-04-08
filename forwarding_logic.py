@@ -58,7 +58,8 @@ class PortForwardingMixin(_BaseApp):
 
     def _start_devtunnel_auth_and_run(self, port: int) -> None:
         def _check_and_auth():
-            if devtunnel_utils.check_login_status():
+            status = devtunnel_utils.check_login_status()
+            if status == 'logged_in':
                 self.app.call_from_thread(self._run_port_forward, port)
                 return
 
@@ -68,7 +69,7 @@ class PortForwardingMixin(_BaseApp):
                     self.notify("Waiting for browser authentication...", severity="information", timeout=60)
                     self._trigger_login_and_wait(port)
             self.app.call_from_thread(self.clear_notifications)
-            self.app.call_from_thread(self.push_screen, DevTunnelAuthScreen(), handle_auth)
+            self.app.call_from_thread(self.push_screen, DevTunnelAuthScreen(is_expired=(status == 'expired')), handle_auth)
             
         threading.Thread(target=_check_and_auth, daemon=True).start()
 
@@ -77,7 +78,7 @@ class PortForwardingMixin(_BaseApp):
         if devtunnel_utils.trigger_login():
             for _ in range(60):
                 time.sleep(2)
-                if devtunnel_utils.check_login_status():
+                if devtunnel_utils.check_login_status() == 'logged_in':
                     self.app.call_from_thread(self.clear_notifications)
                     self.app.call_from_thread(self.notify, "Authentication successful!", severity="information")
                     self.app.call_from_thread(self._run_port_forward, port)

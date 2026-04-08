@@ -104,6 +104,7 @@ class AppTable(Container):
     def on_mount(self) -> None:
         table = self.query_one(DataTable)
         table.cursor_type = "row"
+        table.cursor_foreground_priority = "renderable"
         table.zebra_stripes = True
         
         table.add_columns(
@@ -133,14 +134,14 @@ class AppTable(Container):
             is_run = proc['status'] == 'RUNNING'
             fwd_status = forwarded_ports.get(proc['port'])
 
-            fwd_text = "[ ]"
-            fwd_style = c["inactive"]
             if fwd_status == "loading":
-                fwd_text = "[?]"
-                fwd_style = c["edit"]
+                fwd_cell = Text("[", style=c["inactive"], justify="center")
+                fwd_cell.append("?", style=f"blink {c['edit']}")
+                fwd_cell.append("]", style=c["inactive"])
             elif fwd_status:
-                fwd_text = "[x]"
-                fwd_style = c["active"]
+                fwd_cell = Text("[✓]", style=c["active"], justify="center")
+            else:
+                fwd_cell = Text("[ ]", style=c["inactive"], justify="center")
                 
             is_forwarding = bool(fwd_status)
             edit_text_col = c["inactive"] if is_forwarding else c["edit"]
@@ -153,17 +154,49 @@ class AppTable(Container):
                 Text(str(proc['name']), style=c["name"] if is_run else c["inactive"], justify="center"),
                 Text("~", style=edit_text_col, justify="center"),
                 Text("-", style=delete_text_col, justify="center"),
-                Text(fwd_text, style=fwd_style, justify="center"),
+                fwd_cell,
                 key=str(idx)
             )
 
+from textual import on
+
 class AppInspector(Vertical):
     """The side panel for displaying highly detailed OS-level metrics per port/PID."""
-    
+
     def compose(self) -> ComposeResult:
+        from textual.containers import Horizontal
+        from textual.widgets import Button
         yield Label("PROCESS INSPECTOR", id="details_title")
         with Container(id="details_content_box"):
             yield Label("Select a process to view details.", id="details_content")
+            
+            with Horizontal(id="path_horizontal", classes="url-horizontal"):
+                yield Label("Path:", id="path_header", classes="url-header")
+                # A compact, borderless button with just the icon
+                yield Button("❐", id="btn_copy_path", classes="btn_copy compact-btn pt-right")
+            yield Label("", id="path_text")
+
+            with Horizontal(id="public_url_horizontal", classes="url-horizontal"):
+                yield Label("Public URL:", id="public_url_header", classes="url-header")
+                yield Button("❐", id="btn_copy_public_url", classes="btn_copy compact-btn pt-right")
+            yield Label("", id="public_url_text")
+
+            with Horizontal(id="inspect_url_horizontal", classes="url-horizontal"):
+                yield Label("Inspect URL:", id="inspect_url_header", classes="url-header")
+                yield Button("❐", id="btn_copy_inspect_url", classes="btn_copy compact-btn pt-right")
+            yield Label("", id="inspect_url_text")
+
+    def on_mount(self):
+        for _id in ["#path", "#public_url", "#inspect_url"]:
+            self.query_one(f"{_id}_horizontal").styles.display = "none"
+            self.query_one(f"{_id}_text").styles.display = "none"
+        
+        for btn in self.query(".btn_copy"):
+            btn.tooltip = "Copy"
+
+    @on(Button.Pressed, ".btn_copy")
+    def on_copy_button_pressed(self, event) -> None:
+        self.action_copy_text(event.button.id)
 
     def update_inspector(self, proc: dict | None, public_url: str | tuple[str, str] | None = None) -> None:
         if not proc:
@@ -171,16 +204,25 @@ class AppInspector(Vertical):
             
         try:
             lbl = self.query_one("#details_content", Label)
+            
             is_dark = getattr(self.app, "dark", True)
             c = ThemeColors.get(is_dark)
+
+            def toggle_section(prefix: str, show: bool):
+                self.query_one(f"#{prefix}_horizontal").styles.display = "block" if show else "none"
+                self.query_one(f"#{prefix}_text").styles.display = "block" if show else "none"
             
             if proc["pid"] == "-" or not str(proc["pid"]).isdigit():
                 lbl.update(f"\n[bold {c['delete']}]PORT {proc['port']} IS INACTIVE[/]\n\nNo process is currently listening on this port.")
+                for _id in ["path", "public_url", "inspect_url"]:
+                    toggle_section(_id, False)
                 return
                 
             details = get_process_details(proc["pid"])
             if not details:
                 lbl.update(f"\n[bold {c['edit']}]ACCESS DENIED[/]\n\nUnable to fetch detailed information for PID {proc['pid']}.")
+                for _id in ["path", "public_url", "inspect_url"]:
+                    toggle_section(_id, False)
                 return
                 
             dt = datetime.datetime.fromtimestamp(details['created']).strftime("%Y-%m-%d %H:%M:%S")
@@ -188,7 +230,8 @@ class AppInspector(Vertical):
             cpu = f"{details['cpu']:.1f}%"
             
             accent = c['accent']
-            content = (
+
+            top_content = (
                 f"[{accent} bold]Name:[/] {details['name']}\n"
                 f"[{accent} bold]PID:[/] {proc['pid']}\n"
                 f"[{accent} bold]Port:[/] {proc['port']}\n"
@@ -196,16 +239,98 @@ class AppInspector(Vertical):
                 f"[{accent} bold]Status:[/] {details.get('status', 'running').upper()}\n\n"
                 f"[{accent} bold]Memory:[/] {mem}\n"
                 f"[{accent} bold]CPU:[/] {cpu}\n"
-                f"[{accent} bold]Started:[/] \n{dt}\n\n"
-                f"[{accent} bold]Path:[/] \n{details.get('exe', 'Unknown')}"
+                f"[{accent} bold]Started:[/] \n{dt}\n"
             )
+            lbl.update(top_content)
+
+            path_display = details.get('exe', 'Unknown')
+            from rich.text import Text
+            if path_display and path_display != "Unknown":
+                import os
+                self._inspect_text_path = os.path.dirname(path_display)
+                toggle_section("path", True)
+                
+                header = self.query_one("#path_header", Label)
+                header.update(f"[{accent} bold]Path:[/]")
+                btn = self.query_one("#btn_copy_path", Button)
+                btn.styles.display = "block"
+                # Make the icon match the edit color
+                btn.label = f"[{c['edit']}]❐[/]"
+                
+                path_txt = self.query_one("#path_text", Label)
+                path_txt.update(Text(str(path_display), overflow="fold"))
+            else:
+                self._inspect_text_path = None
+                toggle_section("path", True)
+                self.query_one("#path_header", Label).update(f"[{accent} bold]Path:[/]")
+                self.query_one("#btn_copy_path").styles.display = "none"
+                path_txt = self.query_one("#path_text", Label)
+                path_txt.update(Text(str(path_display), overflow="fold"))
+
+            self._inspect_text_public_url = None
+            self._inspect_text_inspect_url = None
+
             if public_url and public_url != "loading":
                 if isinstance(public_url, tuple):
-                    content += f"\n\n[{accent} bold]Public URL:[/] \n[link={public_url[0]}]{public_url[0]}[/link]"
+                    self._inspect_text_public_url = public_url[0]
+                    toggle_section("public_url", True)
+                    self.query_one("#public_url_header", Label).update(f"[{accent} bold]Public URL:[/]")
+                    btn = self.query_one("#btn_copy_public_url", Button)
+                    btn.styles.display = "block"
+                    btn.label = f"[{c['edit']}]❐[/]"
+                    self.query_one("#public_url_text", Label).update(Text.from_markup(f"[link={public_url[0]}]{public_url[0]}[/link]", overflow="fold"))
+
                     if len(public_url) > 1:
-                        content += f"\n\n[{accent} bold]Inspect URL:[/] \n[link={public_url[1]}]{public_url[1]}[/link]"
+                        self._inspect_text_inspect_url = public_url[1]
+                        toggle_section("inspect_url", True)
+                        self.query_one("#inspect_url_header", Label).update(f"[{accent} bold]Inspect URL:[/]")
+                        btn = self.query_one("#btn_copy_inspect_url", Button)
+                        btn.styles.display = "block"
+                        btn.label = f"[{c['edit']}]❐[/]"
+                        self.query_one("#inspect_url_text", Label).update(Text.from_markup(f"[link={public_url[1]}]{public_url[1]}[/link]", overflow="fold"))
+                    else:
+                        toggle_section("inspect_url", False)
                 else:
-                    content += f"\n\n[{accent} bold]Public URL:[/] \n[link={public_url}]{public_url}[/link]"
-            lbl.update(content)
+                    self._inspect_text_public_url = public_url
+                    toggle_section("public_url", True)
+                    self.query_one("#public_url_header", Label).update(f"[{accent} bold]Public URL:[/]")
+                    btn = self.query_one("#btn_copy_public_url", Button)
+                    btn.styles.display = "block"
+                    btn.label = f"[{c['edit']}]❐[/]"
+                    self.query_one("#public_url_text", Label).update(Text.from_markup(f"[link={public_url}]{public_url}[/link]", overflow="fold"))
+                    toggle_section("inspect_url", False)
+            else:
+                toggle_section("public_url", False)
+                toggle_section("inspect_url", False)
+
         except Exception:
             pass
+
+    def action_copy_text(self, btn_id: str | None) -> None:
+        if not btn_id:
+            return
+            
+        attr_map = {
+            "btn_copy_path": "_inspect_text_path",
+            "btn_copy_public_url": "_inspect_text_public_url",
+            "btn_copy_inspect_url": "_inspect_text_inspect_url"
+        }
+        
+        attr_name = attr_map.get(btn_id)
+        if not attr_name:
+            return
+            
+        text_to_copy = getattr(self, attr_name, None)
+        if text_to_copy:
+            try:
+                import subprocess, platform
+                if platform.system() == "Windows":
+                    subprocess.run('clip', input=text_to_copy.encode('utf-16le'), shell=True)
+                else:
+                    self.app.copy_to_clipboard(text_to_copy)  # type: ignore
+                btn = self.query_one(f"#{btn_id}")
+                btn.tooltip = "Copied!"
+                # Reset tooltip back to Copied (Textual processes it upon rehover or update)
+                self.set_timer(2.0, lambda b=btn: setattr(b, "tooltip", "Copy"))
+            except Exception as e:
+                self.app.notify(f"Failed to copy: {e}", severity="error")

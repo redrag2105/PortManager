@@ -5,8 +5,9 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('styles.tcss', '.')],
-    hiddenimports=[''],
+    # Include the entire styles folder and all its .tcss files inside it
+    datas=[('styles/*.tcss', 'styles')],
+    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

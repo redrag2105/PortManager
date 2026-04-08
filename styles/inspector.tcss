@@ -34,7 +34,7 @@
 
 #details_content {
     width: 100%;
-    height: 100%;
+    height: auto;
     color: #cdd6f4;
 }
 
@@ -54,3 +54,53 @@ Screen:light #details_title {
 Screen:light #details_content {
     color: #4c4f69;
 }
+
+.url-horizontal {
+    height: 1;
+    width: 100%;
+    layout: horizontal;
+    margin-bottom: 0;
+}
+.url-header {
+    width: 1fr;
+}
+.btn_copy {
+    min-width: 3;
+    width: 3;
+    height: 1;
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+}
+.btn_copy:hover {
+    background: transparent !important;
+    text-opacity: 0.7;
+    border: none !important;
+}
+.btn_copy:focus {
+    background: transparent !important;
+    border: none !important;
+}
+.btn_copy.-active {
+    background: transparent !important;
+    border: none !important;
+}
+#path_text, #public_url_text, #inspect_url_text {
+    margin-top: 0;
+    margin-bottom: 1;
+    width: 100%;
+    height: auto;
+}
+Tooltip {
+    min-height: 1;
+    height: 1;
+    padding: 0 1;
+    background: #cdd6f4;
+    color: #313244;
+    border: none;
+    margin-top: -1;
+    margin-left: -6;
+    text-style: none;
+}
+

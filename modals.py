@@ -180,9 +180,14 @@ class DevTunnelInstallScreen(ActionModalScreen):
 
 class DevTunnelAuthScreen(ActionModalScreen):
     """Screen to confirm browser login for Dev Tunnels."""
-    def __init__(self):
+    def __init__(self, is_expired: bool = False):
+        msg = (
+            "Your Microsoft Dev Tunnels login token has expired. Please log in again to host public ports. Clicking Login will open your web browser."
+            if is_expired else
+            "You must log in to Microsoft Dev Tunnels to host public ports. Clicking Login will open your web browser."
+        )
         super().__init__(
-            message="You must log in to Microsoft Dev Tunnels to host public ports. Clicking Login will open your web browser.",
+            message=msg,
             ok_text="Login",
             no_text="Cancel",
             ok_id="add_port_confirm",
