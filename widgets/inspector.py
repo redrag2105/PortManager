@@ -2,8 +2,10 @@ import os
 import subprocess
 import platform
 import datetime
+import time
 from rich.text import Text
-from textual import on
+from textual import on, work
+from textual.worker import get_current_worker
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical, Horizontal
 from textual.widgets import Button, Label
@@ -89,7 +91,33 @@ class AppInspector(Vertical):
                 lbl.update(f"\n[bold {c['edit']}]ACCESS DENIED[/]\n\nUnable to fetch detailed information for PID {proc['pid']}.")
                 hide_all()
                 return
+
+            self.render_inspector_ui(details, proc, public_url)
+            self.start_live_monitoring(int(proc["pid"]), proc, public_url)
+
+        except Exception:
+            pass
+
+    @work(thread=True, exclusive=True)
+    def start_live_monitoring(self, pid: int, proc: dict, public_url: str | tuple[str, str] | None = None) -> None:
+        worker = get_current_worker()
+        
+        while not worker.is_cancelled:
+            details = get_process_details(pid)
+            if not details:
+                break
                 
+            self.app.call_from_thread(self.render_inspector_ui, details, proc, public_url)
+            
+            # Chunked sleep for rapid cancellation detection
+            for _ in range(10):
+                if worker.is_cancelled:
+                    return
+                time.sleep(0.1)
+
+    def render_inspector_ui(self, details: dict, proc: dict, public_url: str | tuple[str, str] | None = None) -> None:
+        try:
+            lbl = self.query_one("#details_content", Label)
             dt = datetime.datetime.fromtimestamp(details['created']).strftime("%Y-%m-%d %H:%M:%S")
             mem = f"{details['memory']:.1f} MB"
             cpu = f"{details['cpu']:.1f}%"

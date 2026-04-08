@@ -79,11 +79,20 @@ def get_running_processes(target_ports: set) -> list[dict]:
     results.sort(key=lambda x: x["port"])
     return results
 
-def get_process_details(pid: int) -> dict:
+_process_cache = {}
+
+def get_process_details(pid: int) -> dict | None:
     if not pid or not str(pid).isdigit():
-        return {}
+        return None
+    pid = int(pid)
     try:
-        proc = psutil.Process(int(pid))
+        proc = _process_cache.get(pid)
+        # Create a new process object if it doesn't exist or is obsolete
+        if not proc or not proc.is_running():
+            proc = psutil.Process(pid)
+            _process_cache[pid] = proc
+            proc.cpu_percent(interval=None) # Prime the cpu counter
+
         with proc.oneshot():
             return {
                 "name": proc.name(),
@@ -92,10 +101,11 @@ def get_process_details(pid: int) -> dict:
                 "status": proc.status(),
                 "username": proc.username(),
                 "memory": proc.memory_info().rss / (1024 * 1024), # in MB
-                "cpu": proc.cpu_percent()
+                "cpu": proc.cpu_percent(interval=None)
             }
-    except (psutil.NoSuchProcess, psutil.AccessDenied):
-        return {}
+    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+        _process_cache.pop(pid, None)
+        return None
 
 def kill_process(pid: int) -> bool:
     try:
@@ -184,5 +194,10 @@ def edit_target_port(old_port: int, new_port: int) -> bool:
     port_edited = False
     for line in lines:
         cleaned = _parse_port_line(line)
+        if cleaned and cleaned.isdigit() and int(cleaned) == old_port:
+            new_lines.append(line.replace(str(old_port), str(new_port), 1))
+            port_edited = True
+        else:
+            new_lines.append(line)
 
     return _write_ports(new_lines) if port_edited else False

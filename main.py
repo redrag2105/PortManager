@@ -22,6 +22,7 @@ class PortManagerApp(PortForwardingMixin, AppActionsMixin, App):
         Binding("+", "add_port", "Add"),
         Binding("=", "add_port", "Add", show=False),
         Binding("~", "edit_selected", "Edit"),
+        Binding("`", "edit_selected", "Edit", show=False),
         Binding("-", "untrack_selected", "Untrack"),
         Binding("k", "kill_selected", "Kill Selected"),
         Binding("K", "kill_selected", "Kill Selected", show=False),

@@ -44,13 +44,11 @@ class AppTable(Container):
             fwd_status = forwarded_ports.get(proc['port'])
 
             if fwd_status == "loading":
-                fwd_cell = Text("[", style=c["accent"], justify="center")
-                fwd_cell.append("?", style=f"blink {c['edit']}")
-                fwd_cell.append("]", style=c["accent"])
+                fwd_cell = Text("?", style=f"blink {c['edit']}", justify="center")
             elif fwd_status:
-                fwd_cell = Text("[✓]", style=c["active"], justify="center")
+                fwd_cell = Text("✓", style=c["active"], justify="center")
             else:
-                fwd_cell = Text("[ ]", style=c["inactive"], justify="center")
+                fwd_cell = Text("✕", style=c["inactive"], justify="center")
                 
             is_forwarding = bool(fwd_status)
             edit_text_col = c["inactive"] if is_forwarding else c["edit"]
