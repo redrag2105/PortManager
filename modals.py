@@ -70,6 +70,16 @@ class ConfirmStopForwardingScreen(ActionModalScreen):
             no_id="cancel"
         )
 
+class ConfirmAppQuitScreen(ActionModalScreen):
+    """Screen with a dialog to confirm quitting when ports are forwarded."""
+    def __init__(self):
+        super().__init__(
+            message="Active forwarded ports exist! Are you sure you want to quit and close all tunnels?",
+            ok_text="Force Quit",
+            no_text="Cancel",
+            ok_id="kill",
+            no_id="cancel"
+        )
 
 
 class BasePortScreen(BaseSharedModal[str | None]):
@@ -177,16 +187,32 @@ class DevTunnelInstallScreen(ActionModalScreen):
         super().action_dismiss_modal()
 
     def _handle_submit(self) -> None:
+        from textual.widgets import ProgressBar
         self._is_working = True
         self.query_one("#question", Label).update("Downloading... Please wait.")
         for btn in self.query(Button):
-            btn.disabled = True
-        self.download_cli()
+            btn.remove()
+
+        pb = ProgressBar(total=100, show_eta=False, id="download_progress")
+        self.query_one("#dialog").mount(pb)
+        self.start_download()
+
+    def update_progress(self, current: int) -> None:
+        from textual.widgets import ProgressBar
+        try:
+            pb = self.query_one("#download_progress", ProgressBar)
+            pb.update(progress=current)
+        except Exception:
+            pass
 
     @work(thread=True)
-    def download_cli(self) -> None:
+    def start_download(self) -> None:
         import devtunnel_utils
-        success = devtunnel_utils.download_devtunnel_cli()
+        
+        def _on_progress(percent: int):
+            self.app.call_from_thread(self.update_progress, percent)
+            
+        success = devtunnel_utils.download_devtunnel_cli(progress_callback=_on_progress)
         self.app.call_from_thread(self.dismiss, success)
 
 

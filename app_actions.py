@@ -69,6 +69,17 @@ class AppActionsMixin(MixinBase):
     def check_action_untrack_selected(self) -> bool:
         return not self._is_forwarding_selected()
 
+    def check_action_toggle_forward(self) -> bool:
+        proc = self._get_selected_process()
+        if not proc or proc['status'] != 'RUNNING':
+            return False
+            
+        fwd_status = self.forwarded_ports.get(proc['port'])
+        if fwd_status == "loading":
+            return False
+            
+        return True
+
     def action_edit_selected(self) -> None:
         if self._is_forwarding_selected():
             return

@@ -32,7 +32,7 @@ def check_devtunnel_cli() -> bool:
     except (FileNotFoundError, PermissionError):
         return False
 
-def download_devtunnel_cli() -> bool:
+def download_devtunnel_cli(progress_callback=None) -> bool:
     """2. Download the CLI based on the host OS."""
     sys_os = platform.system()
     arch = platform.machine().lower()
@@ -40,7 +40,7 @@ def download_devtunnel_cli() -> bool:
     if sys_os == "Windows":
         url = "https://aka.ms/TunnelsCliDownload/win-x64"
     elif sys_os == "Darwin":
-        if arch in ('arm64', 'aarch64'):
+        if arch in ("arm64", "aarch64"):
             url = "https://aka.ms/TunnelsCliDownload/osx-arm64-mac"
         else:
             url = "https://aka.ms/TunnelsCliDownload/osx-x64-mac"
@@ -51,7 +51,12 @@ def download_devtunnel_cli() -> bool:
     local_path = os.path.join(os.getcwd(), exe_name)
 
     try:
-        urllib.request.urlretrieve(url, local_path)
+        def reporthook(block_num, block_size, total_size):
+            if total_size > 0 and progress_callback:
+                percent = min(100, int(block_num * block_size * 100 / total_size))
+                progress_callback(percent)
+
+        urllib.request.urlretrieve(url, local_path, reporthook=reporthook)
         
         # Make executable on macOS/Linux
         if sys_os != "Windows":

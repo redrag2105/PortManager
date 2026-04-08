@@ -75,7 +75,18 @@ class PortManagerApp(PortForwardingMixin, AppActionsMixin, App):
         self.set_timer(0.27, _fix_table_render)
 
 
-    
+    async def action_quit(self) -> None:
+        """Override quit app to include confirmation if ports are forwarded."""
+        if self.forwarded_ports:
+            from modals import ConfirmAppQuitScreen
+            def _handle_quit_confirm(confirm: bool):
+                if confirm:
+                    self.exit()
+            
+            self.push_screen(ConfirmAppQuitScreen(), _handle_quit_confirm)
+        else:
+            self.exit()
+
     def watch_forwarded_ports(self, old_val, new_val) -> None:
         self.update_table()
         self.update_inspector()

@@ -24,6 +24,10 @@ class PortForwardingMixin(_BaseApp):
         port = proc['port']
         fwd_status = self.forwarded_ports.get(port)
 
+        if fwd_status == "loading":
+            self.notify(f"Port {port} forwarding is currently starting. Please wait.", severity="warning")
+            return
+
         if fwd_status:
             # Stop port forwarding
             from modals import ConfirmStopForwardingScreen

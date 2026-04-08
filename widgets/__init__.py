@@ -39,6 +39,28 @@ def custom_toastholder_remove(self, *args, **kwargs):
 Toast._on_mount = custom_toast_on_mount  # type: ignore
 ToastHolder.remove = custom_toastholder_remove  # type: ignore
 
+# --- Monkeypatch BarRenderable so ProgressBar isn't a thin line ---
+from textual.renderables.bar import Bar as BarRenderable
+_original_bar_rich_console = BarRenderable.__rich_console__
+
+def custom_bar_rich_console(self, console, options):
+    lines = list(_original_bar_rich_console(self, console, options))
+    if lines and isinstance(lines[0], Text):
+        text_obj = lines[0]
+        new_text = text_obj.plain.replace("━", "\u2588").replace("╸", "\u2588").replace("╺", "\u2588")
+        new_obj = Text(new_text, end="")
+        for span in text_obj.spans:
+            new_obj.spans.append(span)
+            
+        height = options.max_height or 1
+        for _ in range(height):
+            yield new_obj
+    else:
+        for line in lines:
+            yield line
+
+BarRenderable.__rich_console__ = custom_bar_rich_console
+
 from .sidebar import AppSidebar
 from .table import AppTable
 from .inspector import AppInspector
