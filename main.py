@@ -60,20 +60,25 @@ class PortManagerApp(PortForwardingMixin, AppActionsMixin, App):
         
         self.action_refresh_data()
         
-        # Trigger CSS mount animation and focus the table
-        table_wrapper = self.query_one("#table_wrapper")
-        self.set_timer(0.05, lambda: table_wrapper.add_class("-loaded"))
-        self.set_timer(0.1, lambda: self.query_one("#sidebar").add_class("-loaded"))
-        self.set_timer(0.15, lambda: self.query_one("#process_details_panel").add_class("-loaded"))
-        
         table = self.query_one(DataTable)
         table.focus()
+        
+        from splash import StartupSplashScreen
+        
+        def _on_splash_dismissed(_=None):
+            # Trigger CSS mount animation after splash screen finishes
+            table_wrapper = self.query_one("#table_wrapper")
+            self.set_timer(0.05, lambda: table_wrapper.add_class("-loaded"))
+            self.set_timer(0.1, lambda: self.query_one("#sidebar").add_class("-loaded"))
+            self.set_timer(0.15, lambda: self.query_one("#process_details_panel").add_class("-loaded"))
+            
+            def _fix_table_render():
+                if hasattr(table, "_clear_caches"):
+                    table._clear_caches()
+                table.refresh()
+            self.set_timer(0.27, _fix_table_render)
 
-        def _fix_table_render():
-            if hasattr(table, "_clear_caches"):
-                table._clear_caches()
-            table.refresh()
-        self.set_timer(0.27, _fix_table_render)
+        self.push_screen(StartupSplashScreen(), _on_splash_dismissed)
 
 
     async def action_quit(self) -> None:
