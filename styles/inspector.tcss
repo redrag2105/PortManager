@@ -9,7 +9,7 @@
     border-title-background: #cba6f7;
     offset-y: 10;
     opacity: 0.0;
-    transition: offset 300ms out_circ 50ms, opacity 300ms out_circ 50ms;        
+    transition: offset 150ms out_circ, opacity 100ms out_circ;        
 }
 
 #process_details_panel.-loaded {

@@ -207,7 +207,7 @@ class StartupSplashScreen(ModalScreen):
 
             time.sleep(0.04)
             if step == 85:
-                time.sleep(0.5)
+                time.sleep(0.2)
 
         time.sleep(0.5)
         if not worker.is_cancelled and self.is_mounted:

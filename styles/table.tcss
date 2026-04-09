@@ -5,7 +5,7 @@
     margin-right: 1;
     offset-y: 10;
     opacity: 0.0;
-    transition: offset 300ms out_circ, opacity 300ms out_circ;
+    transition: offset 150ms out_circ, opacity 100ms out_circ;
 }
 #table_wrapper.-loaded {
     offset-y: 0;

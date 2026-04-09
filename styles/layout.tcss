@@ -32,7 +32,7 @@ HeaderClock {
     background: #181825;
     padding: 0 2;
     border-right: vkey #313244;
-    transition: offset 300ms out_circ, opacity 300ms out_circ;
+    transition: offset 150ms out_circ, opacity 100ms out_circ;
     offset-x: -30;
     opacity: 0.0;
 }
