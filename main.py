@@ -1,3 +1,53 @@
+import sys
+import os
+
+if sys.platform == "win32":
+    # This empty os.system call activates ANSI escape sequence processing in Windows terminals!
+    os.system("") 
+    if sys.stdout and getattr(sys.stdout, 'isatty', lambda: False)():
+        # Custom Colored ASCII Logo (Green and Cyan)
+        import shutil
+        GREEN = "\033[92m"
+        CYAN = "\033[96m"
+        RESET = "\033[0m"
+        PORT = r"""               ██████╗  ██████╗ ██████╗ ████████╗
+               ██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝
+               ██████╔╝██║   ██║██████╔╝   ██║   
+               ██╔═══╝ ██║   ██║██╔══██╗   ██║   
+               ██║     ╚██████╔╝██║  ██║   ██║   
+               ╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝"""
+        MANAGER = r"""███╗   ███╗ █████╗ ███╗   ██╗ █████╗  ██████╗ ███████╗██████╗ 
+████╗ ████║██╔══██╗████╗  ██║██╔══██╗██╔════╝ ██╔════╝██╔══██╗
+██╔████╔██║███████║██╔██╗ ██║███████║██║  ███╗█████╗  ██████╔╝
+██║╚██╔╝██║██╔══██║██║╚██╗██║██╔══██║██║   ██║██╔══╝  ██╔══██╗
+██║ ╚═╝ ██║██║  ██║██║ ╚████║██║  ██║╚██████╔╝███████╗██║  ██║
+╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝"""
+        
+        term_width, term_height = shutil.get_terminal_size((80, 24))
+        
+        # Calculate max width of the block to center it as a whole
+        port_lines = PORT.split('\n')
+        manager_lines = MANAGER.split('\n')
+        all_lines = port_lines + manager_lines
+        max_width = max(len(line) for line in all_lines)
+        
+        left_padding = max(0, (term_width - max_width) // 2)
+        pad_str = " " * left_padding
+        
+        # Apply padding and colors
+        logo_lines = [GREEN + pad_str + line for line in port_lines] + \
+                     [CYAN + pad_str + line for line in manager_lines]
+        
+        # Center vertically
+        top_padding = max(0, (term_height - len(logo_lines)) // 2 - 2)
+        
+        ascii_logo = ('\n' * top_padding) + '\n'.join(logo_lines) + f"\n{RESET}\n"
+        
+        # Clear screen first to ensure centering works properly
+        os.system("cls" if os.name == "nt" else "clear")
+        sys.stdout.write(ascii_logo)
+        sys.stdout.flush()
+
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal
 from textual.widgets import Header, Footer, DataTable
