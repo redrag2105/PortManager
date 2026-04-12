@@ -1,5 +1,11 @@
 import os
+import sys
 from utils import get_settings
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
+    return os.path.join(base_path, relative_path)
 
 # Suppress pygame welcome message
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -35,7 +41,8 @@ class AudioEngine:
             for sound_name in self.volumes.keys():
                 for ext in (".ogg", ".wav", ".mp3"):
                     if sound_name not in self.sounds:
-                        filepath = f"assets/{sound_name}{ext}"
+                        raw_path = f"assets/{sound_name}{ext}"
+                        filepath = resource_path(raw_path)
                         self._load_sound(sound_name, filepath)
         except Exception:
             pass

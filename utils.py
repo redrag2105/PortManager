@@ -9,10 +9,10 @@ DEFAULT_SETTINGS = {
         "volumes": {
             "splash": 0.2,
             "scroll": 0.1,
-            "close": 0.4,
-            "click": 0.5,
-            "error": 0.5,
-            "success": 0.5
+            "close": 0.3,
+            "click": 1,
+            "error": 0.3,
+            "success": 0.4
         }
     }
 }
