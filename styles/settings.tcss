@@ -1,0 +1,140 @@
+/* -------------- Settings Screen ---------------- */
+SettingsScreen {
+    align: center middle;
+    background: #1e1e2ebe;
+}
+SettingsScreen:light {
+    background: #eff1f5be;
+}
+
+#settings_dialog {
+    background: #181825;
+    padding: 1 2;
+    width: 68;
+    height: auto;
+    max-height: 90%;
+    border: thick #a6e3a1 80%;
+}
+SettingsScreen:light #settings_dialog {
+    background: #eff1f5;
+    border: thick #40a02b 80%;
+}
+
+SettingsScreen:light .volume-input {
+    background: #ccd0da;
+    color: #4c4f69;
+}
+SettingsScreen:light .volume-input:focus {
+    background: #bcc0cc;
+    color: #1e66f5;
+}
+
+SettingsScreen:light #add_port_title {
+    color: #1e66f5;
+}
+
+.settings-row {
+    height: 3;
+    align: center middle;
+    content-align: center middle;
+    margin-bottom: 1;
+}
+
+#settings_mute {
+    margin-left: 2;
+    width: 5;
+    height: 1;
+    margin-top: 1;
+    border: none;
+    padding: 0;
+}
+#mute-container Label {
+    height: 3;
+    content-align: center middle;
+}
+
+#volume-controls-container {
+    height: 1fr;
+    overflow-y: auto;
+    margin-bottom: 1;
+}
+
+#volume-controls-container.disabled .volume-control-row {
+    opacity: 0.5;
+}
+
+.volume-control-row {
+    height: 3;
+    margin-bottom: 0;
+    align: center middle;
+}
+
+.volume-label {
+    width: 10;
+    content-align: left middle;
+    height: 3;
+}
+
+.volume-slider {
+    width: 25;
+    content-align: center middle;
+    height: 3;
+    margin-right: 2;
+}
+
+.volume-input {
+    width: 6;
+    height: 1;
+    border: none;
+    background: #313244;
+    padding: 0 1;
+    margin: 1 0;
+    content-align: center middle;
+}
+.volume-input:focus {
+    border: none;
+    background: #45475a;
+    color: #cba6f7;
+    content-align: center middle;
+}
+
+#add_port_buttons {
+    layout: grid;
+    grid-size: 2;
+    grid-gutter: 2;
+    height: 3;
+    margin-top: 1;
+}
+
+#add_port_buttons Button {
+    margin: 0;
+    height: 3;
+    width: 100%;
+}
+
+#settings_save {
+    background: #45475a; 
+    color: #a6e3a1; 
+    border: tall transparent;
+    height: 3;
+    margin: 0;
+    width: 100%;
+}
+#settings_save:hover {
+    background: #a6e3a1; color: #11111b;
+}
+
+SettingsScreen:light #settings_save {
+    background: #ccd0da;
+    color: #40a02b;
+}
+SettingsScreen:light #settings_save:hover {
+    background: #40a02b;
+    color: #eff1f5;
+}
+
+#add_port_cancel { background: #45475a; color: #f38ba8; border: tall transparent; }
+#add_port_cancel:hover { background: #f38ba8; color: #11111b; }
+
+SettingsScreen:light #add_port_cancel { color: #d20f39; background: #ccd0da; }
+SettingsScreen:light #add_port_cancel:hover { background: #d20f39; color: #eff1f5; }

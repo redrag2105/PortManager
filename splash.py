@@ -8,6 +8,7 @@ from textual.worker import get_current_worker
 import random
 import string
 import time
+from audio import audio
 
 ASCII_LOGO = r"""
 ██████╗  ██████╗ ██████╗ ████████╗
@@ -152,8 +153,12 @@ class StartupSplashScreen(ModalScreen):
 
         total_steps = 100 
         
+        audio.play("splash", loop=True)
+        
         for step in range(total_steps):
-            if worker.is_cancelled or not self.is_mounted: return
+            if worker.is_cancelled or not self.is_mounted: 
+                audio.stop()
+                return
             
             # 1. The Cryptographic Decode Wave 
             if step < 85:
@@ -202,7 +207,7 @@ class StartupSplashScreen(ModalScreen):
                 chars_to_show = int(((step - 25) / 29) * len(target))
                 safe_update("#splash_status", f"{target[:chars_to_show]}█")
                 
-            elif step < 85:
+            elif step < 95:
                 target = "FINALIZING HANDSHAKE..."
                 chars_to_show = int(((step - 55) / 29) * len(target))
                 safe_update("#splash_status", f"{target[:chars_to_show]}█")
@@ -214,6 +219,9 @@ class StartupSplashScreen(ModalScreen):
             if step == 85:
                 time.sleep(0.2)
 
+        audio.stop()
+        audio.play("success")
+        
         time.sleep(0.5)
         if not worker.is_cancelled and self.is_mounted:
             self.app.call_from_thread(self.dismiss, True)

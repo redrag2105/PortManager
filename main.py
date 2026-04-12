@@ -8,6 +8,7 @@ from forwarding_logic import PortForwardingMixin
 from app_actions import AppActionsMixin
 from utils import get_target_ports, get_running_processes
 from widgets import AppSidebar, AppTable, AppInspector
+from audio import audio
 
 class PortManagerApp(PortForwardingMixin, AppActionsMixin, App):
     """A highly refined, modern Textual App for Port Management."""
@@ -26,11 +27,13 @@ class PortManagerApp(PortForwardingMixin, AppActionsMixin, App):
         Binding("-", "untrack_selected", "Untrack"),
         Binding("k", "kill_selected", "Kill Selected"),
         Binding("K", "kill_selected", "Kill Selected", show=False),
-        Binding("ctrl+k", "kill_all", "Kill ALL"),
+        Binding("ctrl+k", "kill_all", "Kill All"),
         Binding("n", "toggle_dark", "Toggle Theme"),
         Binding("N", "toggle_dark", "Toggle Theme", show=False),
         Binding("f", "toggle_forward", "Toggle FWD"),
-        Binding("F", "toggle_forward", "Toggle FWD", show=False)
+        Binding("F", "toggle_forward", "Toggle FWD", show=False),
+        Binding("s", "open_settings", "Settings", show=False),
+        Binding("S", "open_settings", "Settings", show=False)
     ]
 
     target_ports = reactive(set())
@@ -58,7 +61,7 @@ class PortManagerApp(PortForwardingMixin, AppActionsMixin, App):
         self.title = "PORT MANAGER"
         self.sub_title = "Network Guardian"
         
-        self.action_refresh_data()
+        self.action_refresh_data(play_sound=False)
         
         table = self.query_one(DataTable)
         table.focus()
@@ -83,6 +86,7 @@ class PortManagerApp(PortForwardingMixin, AppActionsMixin, App):
 
     async def action_quit(self) -> None:
         """Override quit app to include confirmation if ports are forwarded."""
+        audio.play("click")
         if self.forwarded_ports:
             from modals import ConfirmAppQuitScreen
             def _handle_quit_confirm(confirm: bool):
@@ -98,19 +102,39 @@ class PortManagerApp(PortForwardingMixin, AppActionsMixin, App):
         self.update_inspector()
 
     def action_toggle_dark(self) -> None:
+        audio.play("click")
         self.dark = not self.dark
         self.update_table()
         self.update_sidebar()
 
-    def action_refresh_data(self) -> None:
+    def action_refresh_data(self, play_sound: bool = True) -> None:
+        if play_sound:
+            audio.play("click")
         self.target_ports = get_target_ports()
         self.processes_data = get_running_processes(self.target_ports)
         self.update_table()
         self.update_sidebar()
 
+    def action_command_palette(self) -> None:
+        """Override default red circle behavior in Header to open settings."""
+        self.action_open_settings()
+
+    def action_open_settings(self) -> None:
+        audio.play("click")
+        from modals import SettingsScreen
+        self.push_screen(SettingsScreen())
+
     def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
+        if not getattr(self, "_is_refreshing", False):
+            # Check if this highlight was caused by an immediate row selection click
+            self.set_timer(0.05, self._play_scroll_if_valid)
+            setattr(self, "_highlight_cancel_scroll", False)
         self.update_sidebar()
         self.update_inspector()
+
+    def _play_scroll_if_valid(self):
+        if not getattr(self, "_highlight_cancel_scroll", False):
+            audio.play("scroll")
 
     def _get_selected_process(self) -> dict | None:
         """Helper to fetch the currently selected process struct from the DataTable."""
@@ -135,7 +159,9 @@ class PortManagerApp(PortForwardingMixin, AppActionsMixin, App):
 
     def update_table(self) -> None:
         try:
+            self._is_refreshing = True
             self.query_one(AppTable).populate_table(self.processes_data, self.forwarded_ports)
+            self.set_timer(0.45, lambda: setattr(self, "_is_refreshing", False))
         except Exception:
             pass
 

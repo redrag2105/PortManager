@@ -11,7 +11,7 @@ build/
 dist/
 
 # Local Data/Config 
-ports.txt
+settings.json
 
 # MS Dev Tunnels
 devtunnel.exe
