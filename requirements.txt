@@ -1,3 +1,4 @@
 textual==0.52.1
 psutil==5.9.8
 pyinstaller>=6.0.0
+pygame>=2.5.0

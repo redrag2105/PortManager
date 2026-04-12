@@ -2,14 +2,14 @@
 #process_details_panel {
     height: 100%;
     width: 35%;
-    background: #181825;
-    border: outer #cba6f7;
+    background: #1e1e2e;
+    border: round #cba6f7;
     margin-left: 1;
     border-title-color: #1e1e2e;
     border-title-background: #cba6f7;
-    offset-y: 10;
+    offset-y: 8;
     opacity: 0.0;
-    transition: offset 150ms out_circ, opacity 100ms out_circ;        
+    transition: offset 300ms out_cubic, opacity 350ms out_cubic;        
 }
 
 #process_details_panel.-loaded {
@@ -40,8 +40,8 @@
 
 /* Inspector Panel Light Mode */
 Screen:light #process_details_panel {
-    background: #e6e9ef;
-    border: outer #1e66f5;
+    background: #eff1f5;
+    border: round #1e66f5;
     border-title-background: #1e66f5;
     border-title-color: #ffffff;
 }

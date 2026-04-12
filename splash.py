@@ -25,13 +25,12 @@ class StartupSplashScreen(ModalScreen):
     CSS = """
     StartupSplashScreen {
         align: center middle;
-        background: #0f0f14; 
     }
     #splash_main {
-        width: 100;
-        height: 28;
-        border: outer #cba6f7;
-        background: #1e1e2e;
+        width: 100%;
+        height: 100%;
+        border: round #cba6f7;
+        background: #0f0f14;
         padding: 1 2;
     }
     #splash_header {
@@ -118,8 +117,14 @@ class StartupSplashScreen(ModalScreen):
         worker = get_current_worker()
         
         def safe_update(node_id, text):
-            if not worker.is_cancelled and self.is_mounted:
-                self.app.call_from_thread(self.query_one(node_id, Label).update, text)
+            if worker.is_cancelled or not self.is_mounted:
+                return
+            def _do_update():
+                try:
+                    self.query_one(node_id, Label).update(text)
+                except Exception:
+                    pass
+            self.app.call_from_thread(_do_update)
 
         chars = string.ascii_letters + string.digits + "!@#$%^&*"
         glitch_lines = ASCII_LOGO.strip("\n").split("\n")

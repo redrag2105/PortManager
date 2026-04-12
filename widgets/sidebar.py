@@ -22,7 +22,7 @@ class AppSidebar(Vertical):
             yield Button("+ Add Port", id="btn_add_port")
             yield Button("↻ Refresh", id="btn_refresh")
             yield Button("✕ Kill Selected", id="btn_kill_selected")
-            yield Button("⚠ Kill All", id="btn_kill_all")
+            yield Button(" ⃠ Kill All", id="btn_kill_all")
 
     def update_sidebar(self, processes_data: list, target_ports: set, selected_proc: dict | None) -> None:
         running = sum(1 for p in processes_data if p['status'] == 'RUNNING')
