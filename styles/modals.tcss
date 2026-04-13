@@ -1,3 +1,4 @@
+
 /* Modals - Common Background & Alignment */
 ConfirmKillScreen,
 ConfirmStopForwardingScreen,
@@ -183,4 +184,4 @@ Screen:light #cancel { color: #1e66f5; }
 Screen:light #cancel:hover { background: #1e66f5; color: #eff1f5; }
 
 Screen:light #add_port_confirm { color: #40a02b; }
-Screen:light #add_port_confirm:hover { background: #40a02b; color: #eff1f5; }   
+Screen:light #add_port_confirm:hover { background: #40a02b; color: #eff1f5; }

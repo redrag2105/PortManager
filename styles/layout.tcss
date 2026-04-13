@@ -32,7 +32,7 @@ HeaderClock {
     background: #181825;
     padding: 0 2;
     border-right: vkey #313244;
-    transition: offset 150ms out_circ, opacity 100ms out_circ;
+    transition: offset 300ms out_cubic, opacity 350ms out_cubic;
     offset-x: -30;
     opacity: 0.0;
 }
@@ -61,8 +61,8 @@ HeaderClock {
 #stats_box {
     height: auto;
     background: #181825;
-    border-top: solid #cba6f7;
-    border-bottom: solid #cba6f7;
+    border-top: ascii #cba6f7;
+    border-bottom: ascii #cba6f7;
     padding: 1;
     margin-bottom: 1;
 }

@@ -2,6 +2,7 @@ from textual import work
 import devtunnel_utils
 import time
 import threading
+from audio import audio
 
 from typing import TYPE_CHECKING, Any
 
@@ -17,6 +18,7 @@ else:
 
 class PortForwardingMixin(_BaseApp):
     async def action_toggle_forward(self) -> None:
+        audio.play("click")
         proc = self._get_selected_process()
         if not proc or proc['status'] != 'RUNNING':
             return
@@ -37,6 +39,7 @@ class PortForwardingMixin(_BaseApp):
                         fwd = dict(self.forwarded_ports)
                         fwd.pop(port, None)
                         self.forwarded_ports = fwd
+                        audio.play("success")
                         self.notify(f"Port {port} forwarding stopped.", severity="information")
 
             self.app.push_screen(ConfirmStopForwardingScreen(port), _handle_confirm)
@@ -89,6 +92,7 @@ class PortForwardingMixin(_BaseApp):
                 time.sleep(2)
                 if devtunnel_utils.check_login_status() == 'logged_in':
                     self.app.call_from_thread(self.clear_notifications)
+                    self.app.call_from_thread(audio.play, "success")
                     self.app.call_from_thread(self.notify, "Authentication successful!", severity="information")
                     self.app.call_from_thread(self._run_port_forward, port)
                     return
@@ -116,5 +120,6 @@ class PortForwardingMixin(_BaseApp):
             self.notify(f"Failed to forward port {port}.", severity="error")
 
     def _notify_forward_success(self, port: int, url: str | tuple[str, str]) -> None:
+        audio.play("success")
         self.notify(f"Port {port} is now public!", severity="information", timeout=5)
         self.update_inspector()

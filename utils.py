@@ -1,38 +1,62 @@
 import psutil
 from pathlib import Path
+import json
 
-def _get_ports_file() -> Path:
-    ports_file = Path("ports.txt")
-    if not ports_file.exists():
-        ports_file.write_text("3000\n5173\n")       
-    return ports_file
+DEFAULT_SETTINGS = {
+    "ports": [3000, 5173],
+    "sounds": {
+        "mute": False,
+        "volumes": {
+            "splash": 0.2,
+            "scroll": 0.1,
+            "close": 0.3,
+            "click": 1,
+            "error": 0.3,
+            "success": 0.4
+        }
+    }
+}
 
-def _read_ports() -> list[str]:
+def _get_settings_file() -> Path:
+    settings_file = Path("settings.json")
+    
+    if not settings_file.exists():
+        settings = DEFAULT_SETTINGS.copy()
+        
+        try:
+            with open(settings_file, "w") as f:
+                json.dump(settings, f, indent=4)
+        except Exception:
+            pass
+            
+    return settings_file
+
+def get_settings() -> dict:
     try:
-        with open(_get_ports_file(), "r") as f:
-            return f.readlines()
+        with open(_get_settings_file(), "r") as f:
+            data = json.load(f)
+            merged = DEFAULT_SETTINGS.copy()
+            merged["ports"] = data.get("ports", merged["ports"])
+            if "sounds" in data:
+                merged["sounds"]["mute"] = data["sounds"].get("mute", merged["sounds"]["mute"])
+                if "volumes" in data["sounds"]:
+                    for k, v in data["sounds"]["volumes"].items():
+                        merged["sounds"]["volumes"][k] = v
+            return merged
     except Exception:
-        return []
+        return DEFAULT_SETTINGS.copy()
 
-def _write_ports(lines: list[str]) -> bool:
+def save_settings(settings: dict) -> bool:
     try:
-        with open(_get_ports_file(), "w") as f:
-            f.writelines(lines)
+        with open(_get_settings_file(), "w") as f:
+            json.dump(settings, f, indent=4)
         return True
     except Exception:
         return False
 
-def _parse_port_line(line: str) -> str:
-    """Extracts the port number from a line, ignoring comments and whitespace."""
-    return line.strip().split("#")[0].strip()
-
 def get_target_ports() -> set:
-    ports = set()
-    for line in _read_ports():
-        cleaned = _parse_port_line(line)
-        if cleaned and cleaned.isdigit():
-            ports.add(int(cleaned))
-    return ports
+    settings = get_settings()
+    return set(settings.get("ports", []))
 
 def get_running_processes(target_ports: set) -> list[dict]:
     results = []
@@ -153,9 +177,13 @@ def add_multiple_target_ports(raw_input: str) -> dict:
         
     if added:
         try:
-            with open(_get_ports_file(), "a") as f:
-                for p in added:
-                    f.write(f"{p}\n")
+            settings = get_settings()
+            ports_list = settings.get("ports", [])
+            for p in added:
+                if p not in ports_list:
+                    ports_list.append(p)
+            settings["ports"] = sorted(ports_list)
+            save_settings(settings)
         except Exception:
             return {"error": "File write error"}
             
@@ -167,37 +195,30 @@ def add_multiple_target_ports(raw_input: str) -> dict:
     }
 
 def remove_target_port(port: int) -> bool:
-    """Removes a port from ports.txt."""
-    lines = _read_ports()
-    new_lines = []
-    port_removed = False
-    for line in lines:
-        cleaned = _parse_port_line(line)
-        if cleaned and cleaned.isdigit() and int(cleaned) == port:
-            port_removed = True
-            continue # Skip adding this line back
-        new_lines.append(line)
-
-    return _write_ports(new_lines) if port_removed else False
+    """Removes a port from settings.json."""
+    settings = get_settings()
+    ports = settings.get("ports", [])
+    if port in ports:
+        ports.remove(port)
+        settings["ports"] = ports
+        return save_settings(settings)
+    return False
 
 def edit_target_port(old_port: int, new_port: int) -> bool:
-    """Changes an existing port to a new port in ports.txt."""
+    """Changes an existing port to a new port in settings.json."""
     if old_port == new_port:
         return True
 
-    current_ports = get_target_ports()
-    if new_port in current_ports:
+    settings = get_settings()
+    ports = settings.get("ports", [])
+    
+    if new_port in ports:
         return False # Target port already exists
 
-    lines = _read_ports()
-    new_lines = []
-    port_edited = False
-    for line in lines:
-        cleaned = _parse_port_line(line)
-        if cleaned and cleaned.isdigit() and int(cleaned) == old_port:
-            new_lines.append(line.replace(str(old_port), str(new_port), 1))
-            port_edited = True
-        else:
-            new_lines.append(line)
-
-    return _write_ports(new_lines) if port_edited else False
+    if old_port in ports:
+        idx = ports.index(old_port)
+        ports[idx] = new_port
+        settings["ports"] = sorted(ports)
+        return save_settings(settings)
+        
+    return False
