@@ -58,10 +58,10 @@ Alternatively, on Windows, you can simply double-click the `PortManager.bat` fil
 
 ## ⚙️ Configuration (settings.json)
 
-The application automatically reads from and manages a configuration file named `settings.json` located in the root tracking directory to know which ports to monitor and how to configure audio.
+The application automatically reads from and manages a configuration file named `settings.json`. In the current implementation, this file is resolved relative to `utils.py`, so that is the location to check when you want to view or edit it manually.
 - If `settings.json` doesn't exist, it will be automatically created with default ports.
-- You can add or remove ports directly through the TUI (`+`, `-`, `~`), or by manually opening `settings.json` in any text editor.
-- The UI Audio controls (accessible via `s`) will also write to this file dynamically.
+- You can add or remove ports directly through the TUI (`+`, `-`, `~`), or by manually opening that `settings.json` file in any text editor.
+- The UI Audio controls (accessible via `s`) also write their changes back to the same file.
 
 **Example `settings.json`:**
 ```json
