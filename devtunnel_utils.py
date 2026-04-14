@@ -195,27 +195,30 @@ async def stop_port_forward(port: int) -> bool:
     process = active_tunnels.get(port)
     if process:
         try:
-            process.terminate()
-            try:
-                await asyncio.wait_for(process.wait(), timeout=3.0)
-            except asyncio.TimeoutError:
-                process.kill()
+            process.kill()
         except Exception:
-            try:
-                process.kill() # Force kill if terminate fails
-            except Exception:
-                pass
+            pass
                 
         # Clean up the tunnel we created 
         path = get_devtunnel_path()
         tunnel_name = f"tui-tunnel-{port}"
-        proc_cleanup = await asyncio.create_subprocess_exec(
-            path, 'delete', tunnel_name, '-f',
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL
-        )
-        await proc_cleanup.wait()
+        
+        # Fire and forget the delete command so it doesn't block the UI or get killed on app exit
+        if platform.system() == "Windows":
+            flags = getattr(subprocess, 'CREATE_NO_WINDOW', 0x08000000)
+            subprocess.Popen([path, 'delete', tunnel_name, '-f'], creationflags=flags)
+        else:
+            subprocess.Popen([path, 'delete', tunnel_name, '-f'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             
         del active_tunnels[port]
         return True
     return False
+
+async def cleanup_all_tunnels() -> None:
+    """Stop all active port forwards and delete their tunnels."""
+    # List keys to avoid dictionary changed size during iteration
+    for port in list(active_tunnels.keys()):
+        try:
+            await stop_port_forward(port)
+        except Exception:
+            pass

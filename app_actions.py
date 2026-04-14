@@ -79,7 +79,7 @@ class AppActionsMixin(MixinBase):
 
     def check_action_toggle_forward(self) -> bool:
         proc = self._get_selected_process()
-        if not proc or proc['status'] != 'RUNNING':
+        if not proc:
             return False
             
         fwd_status = self.forwarded_ports.get(proc['port'])
@@ -89,11 +89,11 @@ class AppActionsMixin(MixinBase):
         return True
 
     def action_edit_selected(self) -> None:
-        audio.play("click")
         proc = self._get_selected_process()
         if not proc or self.forwarded_ports.get(proc['port']):
             return
             
+        audio.play("click")
         self.clear_notifications()
         self.push_screen(
             EditPortScreen(self.target_ports, proc['port']),
@@ -101,11 +101,11 @@ class AppActionsMixin(MixinBase):
         )
 
     def action_untrack_selected(self) -> None:
-        audio.play("click")
         proc = self._get_selected_process()
         if not proc or self.forwarded_ports.get(proc['port']):
             return
             
+        audio.play("click")
         msg = f"Stop tracking port {proc['port']}?"
         self.clear_notifications()
         self.push_screen(
@@ -114,25 +114,25 @@ class AppActionsMixin(MixinBase):
         )
 
     def action_kill_selected(self) -> None:
-        audio.play("click")
         proc = self._get_selected_process()
         if not proc or not str(proc.get("pid", "")).isdigit():
             return
             
+        audio.play("click")
         msg = f"Terminate Process: {proc['name']}\nRunning on Port: {proc['port']} (PID: {proc['pid']})?"
         self.clear_notifications()
         self.push_screen(
-            ConfirmKillScreen(msg), 
+            ConfirmKillScreen(msg),
             lambda confirm: self._execute_kill([proc]) if confirm else None
         )
 
     def action_kill_all(self) -> None:
-        audio.play("click")
         running_procs = [p for p in self.processes_data if str(p.get("pid", "")).isdigit()]
         
         if not running_procs:
             return
 
+        audio.play("click")
         msg = f"Proceed destroying ALL {len(running_procs)} processes?"
         self.clear_notifications()
         self.push_screen(

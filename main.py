@@ -136,15 +136,19 @@ class PortManagerApp(PortForwardingMixin, AppActionsMixin, App):
 
     async def action_quit(self) -> None:
         """Override quit app to include confirmation if ports are forwarded."""
+        from audio import audio
+        import devtunnel_utils
         audio.play("click")
         if self.forwarded_ports:
             from modals import ConfirmAppQuitScreen
-            def _handle_quit_confirm(confirm: bool):
+            async def _handle_quit_confirm(confirm: bool):
                 if confirm:
+                    await devtunnel_utils.cleanup_all_tunnels()
                     self.exit()
             
             self.push_screen(ConfirmAppQuitScreen(), _handle_quit_confirm)
         else:
+            await devtunnel_utils.cleanup_all_tunnels()
             self.exit()
 
     def watch_forwarded_ports(self, old_val, new_val) -> None:
@@ -175,6 +179,17 @@ class PortManagerApp(PortForwardingMixin, AppActionsMixin, App):
         self.push_screen(SettingsScreen())
 
     def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
+        try:
+            table = self.query_one(DataTable)
+            row_idx = table.cursor_coordinate.row if table.cursor_coordinate else None
+        except Exception:
+            row_idx = None
+        
+        if getattr(self, "_last_highlighted_row", None) == row_idx:
+            return
+            
+        self._last_highlighted_row = row_idx
+        
         if not getattr(self, "_is_refreshing", False):
             # Check if this highlight was caused by an immediate row selection click
             self.set_timer(0.05, self._play_scroll_if_valid)

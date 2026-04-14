@@ -19,7 +19,9 @@ DEFAULT_SETTINGS = {
 }
 
 def _get_settings_file() -> Path:
-    settings_file = Path(__file__).resolve().parent / "settings.json"
+    settings_dir = Path.home() / ".portmanager"
+    settings_dir.mkdir(parents=True, exist_ok=True)
+    settings_file = settings_dir / "settings.json"
     
     if not settings_file.exists():
         settings = copy.deepcopy(DEFAULT_SETTINGS)
@@ -139,15 +141,14 @@ def kill_process(pid: int) -> bool:
         return False
         
     try:
-        proc.terminate()
-        proc.wait(timeout=3)
+        proc.kill()
+        try:
+            proc.wait(timeout=1.0)
+        except psutil.TimeoutExpired:
+            pass
         return True
-    except (psutil.AccessDenied, psutil.TimeoutExpired):
-        try: # force kill
-            proc.kill()
-            return True
-        except Exception:
-            return False
+    except Exception:
+        return False
 
 def add_multiple_target_ports(raw_input: str) -> dict:
     """Takes a space-separated string of ports, validates and adds them safely."""
