@@ -1,10 +1,11 @@
 import os
 import sys
+from pathlib import Path
 from utils import get_settings
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
-    base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
+    base_path = getattr(sys, '_MEIPASS', str(Path(__file__).resolve().parent))
     return os.path.join(base_path, relative_path)
 
 # Suppress pygame welcome message

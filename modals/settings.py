@@ -1,11 +1,8 @@
 from typing import TypeVar
-from textual import work
 from textual.app import ComposeResult
 from textual.containers import Grid, Vertical, VerticalScroll, Horizontal
-from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Input, Switch
 from modals.slider import CustomSlider as Slider
-from textual.binding import Binding
 from audio import audio
 
 ResultType = TypeVar("ResultType")
@@ -101,24 +98,30 @@ class SettingsScreen(BaseSharedModal[None]):
             settings = get_settings()
             
             is_muted = self.query_one("#settings_mute", Switch).value
-            audio.set_mute(is_muted)
+            staged_volumes = dict(audio.volumes)
             
             for vc in self.query(VolumeControl):
                 inp = vc.query_one(Input)
                 if inp.value.isdigit():
                     vol = min(100, max(0, int(inp.value))) / 100.0
-                    name = vc.sound_name
-                    audio.volumes[name] = vol
-                    if name in audio.sounds and not audio.is_muted:
-                        audio.sounds[name].set_volume(vol)
+                    staged_volumes[vc.sound_name] = vol
             
             settings["sounds"] = {
                 "mute": is_muted,
-                "volumes": audio.volumes
+                "volumes": staged_volumes
             }
-            save_settings(settings)
-            audio.play("success")
-            self.dismiss(None)
+            if save_settings(settings):
+                audio.set_mute(is_muted)
+                for name, vol in staged_volumes.items():
+                    audio.volumes[name] = vol
+                    if name in audio.sounds and not audio.is_muted:
+                        audio.sounds[name].set_volume(vol)
+                
+                audio.play("success")
+                self.dismiss(None)
+            else:
+                audio.play("error")
+                self.app.notify("Failed to save audio settings to file.", severity="error")
         elif event.button.id == "add_port_cancel":
             audio.play("close")
             self.dismiss(None)

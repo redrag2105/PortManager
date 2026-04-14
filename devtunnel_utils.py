@@ -6,8 +6,16 @@ import urllib.request
 import re
 import asyncio
 
+from pathlib import Path
+
 # Dictionary to track active processes for each forwarded port
 active_tunnels: dict[int, asyncio.subprocess.Process] = {}
+
+def _get_devtunnel_dir() -> str:
+    """Helper function to get a persistent directory for devtunnel."""
+    dir_path = Path.home() / ".portmanager" / "bin"
+    dir_path.mkdir(parents=True, exist_ok=True)
+    return str(dir_path)
 
 def get_devtunnel_path() -> str:
     """Helper function to get the local or system path of the devtunnel executable."""
@@ -15,9 +23,9 @@ def get_devtunnel_path() -> str:
     if system_path:
         return system_path
         
-    # Check current directory for downloaded executable
+    # Check persistent directory for downloaded executable
     exe_name = 'devtunnel.exe' if platform.system() == 'Windows' else 'devtunnel'
-    return os.path.join(os.getcwd(), exe_name)
+    return os.path.join(_get_devtunnel_dir(), exe_name)
 
 def check_devtunnel_cli() -> bool:
     """1. Checks if the devtunnel CLI is installed and accessible."""
@@ -48,7 +56,7 @@ def download_devtunnel_cli(progress_callback=None) -> bool:
         url = "https://aka.ms/TunnelsCliDownload/linux-x64"
 
     exe_name = 'devtunnel.exe' if sys_os == 'Windows' else 'devtunnel'
-    local_path = os.path.join(os.getcwd(), exe_name)
+    local_path = os.path.join(_get_devtunnel_dir(), exe_name)
 
     try:
         def reporthook(block_num, block_size, total_size):
@@ -162,6 +170,16 @@ async def start_port_forward(port: int) -> tuple[str, str] | str | None:
                             inspect_url = matches[0]
 
                     if public_url and inspect_url:
+                        # Once we have both URLs, we must continue reading the stdout in the 
+                        # background to prevent the pipe buffer from filling up and blocking 
+                        # the devtunnel process.
+                        async def drain_stdout(stream):
+                            while True:
+                                line = await stream.readline()
+                                if not line:
+                                    break
+                                    
+                        asyncio.create_task(drain_stdout(process.stdout))
                         return (public_url, inspect_url)
 
         return None
@@ -177,20 +195,30 @@ async def stop_port_forward(port: int) -> bool:
     process = active_tunnels.get(port)
     if process:
         try:
-            process.terminate()
-            await asyncio.wait_for(process.wait(), timeout=3.0)
-        except asyncio.TimeoutError:
-            try:
-                process.kill()
-            except Exception:
-                pass
+            process.kill()
         except Exception:
-            try:
-                process.kill() # Force kill if terminate fails
-            except Exception:
-                pass
+            pass
+                
+        # Clean up the tunnel we created 
+        path = get_devtunnel_path()
+        tunnel_name = f"tui-tunnel-{port}"
         
+        # Fire and forget the delete command so it doesn't block the UI or get killed on app exit
+        if platform.system() == "Windows":
+            flags = getattr(subprocess, 'CREATE_NO_WINDOW', 0x08000000)
+            subprocess.Popen([path, 'delete', tunnel_name, '-f'], creationflags=flags)
+        else:
+            subprocess.Popen([path, 'delete', tunnel_name, '-f'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            
         del active_tunnels[port]
         return True
-        
     return False
+
+async def cleanup_all_tunnels() -> None:
+    """Stop all active port forwards and delete their tunnels."""
+    # List keys to avoid dictionary changed size during iteration
+    for port in list(active_tunnels.keys()):
+        try:
+            await stop_port_forward(port)
+        except Exception:
+            pass

@@ -1,11 +1,7 @@
-from textual.app import ComposeResult
-from textual.containers import Grid, Vertical, VerticalScroll, Horizontal
-from textual.screen import ModalScreen
 from textual.widgets import Label
 
 from textual.message import Message
 from textual.events import Click, MouseDown, MouseMove, MouseUp
-from textual.widgets import Label
 
 class CustomSlider(Label):
     """Custom slider implementation replacing standard Textual slider."""

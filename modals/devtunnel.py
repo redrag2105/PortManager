@@ -1,11 +1,6 @@
 from typing import TypeVar
 from textual import work
-from textual.app import ComposeResult
-from textual.containers import Grid, Vertical, VerticalScroll, Horizontal
-from textual.screen import ModalScreen
-from textual.widgets import Button, Label, Input, Switch
-from modals.slider import CustomSlider as Slider
-from textual.binding import Binding
+from textual.widgets import Button, Label
 from audio import audio
 
 ResultType = TypeVar("ResultType")

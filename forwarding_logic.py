@@ -18,14 +18,14 @@ else:
 
 class PortForwardingMixin(_BaseApp):
     async def action_toggle_forward(self) -> None:
-        audio.play("click")
         proc = self._get_selected_process()
-        if not proc or proc['status'] != 'RUNNING':
+        if not proc:
             return
 
         port = proc['port']
         fwd_status = self.forwarded_ports.get(port)
 
+        audio.play("click")
         if fwd_status == "loading":
             self.notify(f"Port {port} forwarding is currently starting. Please wait.", severity="warning")
             return
