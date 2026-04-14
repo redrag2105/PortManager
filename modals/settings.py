@@ -1,11 +1,8 @@
 from typing import TypeVar
-from textual import work
 from textual.app import ComposeResult
 from textual.containers import Grid, Vertical, VerticalScroll, Horizontal
-from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Input, Switch
 from modals.slider import CustomSlider as Slider
-from textual.binding import Binding
 from audio import audio
 
 ResultType = TypeVar("ResultType")
@@ -116,9 +113,12 @@ class SettingsScreen(BaseSharedModal[None]):
                 "mute": is_muted,
                 "volumes": audio.volumes
             }
-            save_settings(settings)
-            audio.play("success")
-            self.dismiss(None)
+            if save_settings(settings):
+                audio.play("success")
+                self.dismiss(None)
+            else:
+                audio.play("error")
+                self.app.notify("Failed to save audio settings to file.", severity="error")
         elif event.button.id == "add_port_cancel":
             audio.play("close")
             self.dismiss(None)

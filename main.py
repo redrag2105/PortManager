@@ -212,8 +212,9 @@ class PortManagerApp(PortForwardingMixin, AppActionsMixin, App):
             self._is_refreshing = True
             self.query_one(AppTable).populate_table(self.processes_data, self.forwarded_ports)
             self.set_timer(0.45, lambda: setattr(self, "_is_refreshing", False))
-        except Exception:
-            pass
+        except Exception as e:
+            self.notify(f"Table update failed: {e}", severity="error")
+            self._is_refreshing = False
 
     def update_inspector(self) -> None:
         try:

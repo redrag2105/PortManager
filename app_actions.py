@@ -56,7 +56,7 @@ class AppActionsMixin(MixinBase):
                 self.action_refresh_data(play_sound=False)
             else:
                 audio.play("error")
-                self.notify(f"Failed to edit port.", severity="error")
+                self.notify("Failed to edit port.", severity="error")
 
     def _handle_untrack_port(self, port: int) -> None:
         if remove_target_port(port):
@@ -65,7 +65,7 @@ class AppActionsMixin(MixinBase):
             self.action_refresh_data(play_sound=False)
         else:
             audio.play("error")
-            self.notify(f"Failed to remove port.", severity="error")
+            self.notify("Failed to remove port.", severity="error")
 
     def _is_forwarding_selected(self) -> bool:
         proc = self._get_selected_process()

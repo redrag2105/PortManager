@@ -17,7 +17,7 @@ def get_devtunnel_path() -> str:
         
     # Check current directory for downloaded executable
     exe_name = 'devtunnel.exe' if platform.system() == 'Windows' else 'devtunnel'
-    return os.path.join(os.getcwd(), exe_name)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), exe_name)
 
 def check_devtunnel_cli() -> bool:
     """1. Checks if the devtunnel CLI is installed and accessible."""
@@ -48,7 +48,7 @@ def download_devtunnel_cli(progress_callback=None) -> bool:
         url = "https://aka.ms/TunnelsCliDownload/linux-x64"
 
     exe_name = 'devtunnel.exe' if sys_os == 'Windows' else 'devtunnel'
-    local_path = os.path.join(os.getcwd(), exe_name)
+    local_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), exe_name)
 
     try:
         def reporthook(block_num, block_size, total_size):

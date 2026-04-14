@@ -1,10 +1,8 @@
 from typing import TypeVar
-from textual import work
 from textual.app import ComposeResult
-from textual.containers import Grid, Vertical, VerticalScroll, Horizontal
+from textual.containers import Grid
 from textual.screen import ModalScreen
-from textual.widgets import Button, Label, Input, Switch
-from modals.slider import CustomSlider as Slider
+from textual.widgets import Button, Label
 from textual.binding import Binding
 from audio import audio
 

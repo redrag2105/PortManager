@@ -1,6 +1,7 @@
 import psutil
 from pathlib import Path
 import json
+import copy
 
 DEFAULT_SETTINGS = {
     "ports": [3000, 5173],
@@ -18,10 +19,10 @@ DEFAULT_SETTINGS = {
 }
 
 def _get_settings_file() -> Path:
-    settings_file = Path("settings.json")
+    settings_file = Path(__file__).resolve().parent / "settings.json"
     
     if not settings_file.exists():
-        settings = DEFAULT_SETTINGS.copy()
+        settings = copy.deepcopy(DEFAULT_SETTINGS)
         
         try:
             with open(settings_file, "w") as f:
@@ -35,7 +36,7 @@ def get_settings() -> dict:
     try:
         with open(_get_settings_file(), "r") as f:
             data = json.load(f)
-            merged = DEFAULT_SETTINGS.copy()
+            merged = copy.deepcopy(DEFAULT_SETTINGS)
             merged["ports"] = data.get("ports", merged["ports"])
             if "sounds" in data:
                 merged["sounds"]["mute"] = data["sounds"].get("mute", merged["sounds"]["mute"])
@@ -44,7 +45,7 @@ def get_settings() -> dict:
                         merged["sounds"]["volumes"][k] = v
             return merged
     except Exception:
-        return DEFAULT_SETTINGS.copy()
+        return copy.deepcopy(DEFAULT_SETTINGS)
 
 def save_settings(settings: dict) -> bool:
     try:
@@ -183,7 +184,8 @@ def add_multiple_target_ports(raw_input: str) -> dict:
                 if p not in ports_list:
                     ports_list.append(p)
             settings["ports"] = sorted(ports_list)
-            save_settings(settings)
+            if not save_settings(settings):
+                return {"error": "File write error"}
         except Exception:
             return {"error": "File write error"}
             
