@@ -46,7 +46,15 @@ class CustomSlider(Label):
         if self.has_class("muted"):
             return
         width = 20
-        percent = max(0, min(1, x / width))
+        try:
+            widget_width = self.size.width
+        except Exception:
+            widget_width = 25
+            
+        offset = max(0, (widget_width - 21) // 2)
+        adjusted_x = x - offset
+        
+        percent = max(0, min(1, adjusted_x / width))
         new_val = int(percent * (self.max_val - self.min_val) + self.min_val)
         new_val = round(new_val / self.step) * self.step
         self.value = new_val

@@ -112,7 +112,7 @@ async def start_port_forward(port: int) -> tuple[str, str] | str | None:
     tunnel_name = f"tui-tunnel-{port}"
 
     try:
-        # Step 1: Create the tunnel
+        # Create the tunnel
         proc_create = await asyncio.create_subprocess_exec(
             path, 'create', tunnel_name,
             stdout=asyncio.subprocess.DEVNULL,
@@ -120,7 +120,7 @@ async def start_port_forward(port: int) -> tuple[str, str] | str | None:
         )
         await proc_create.wait()
 
-        # Step 2: Assign the port
+        # Assign the port
         proc_port = await asyncio.create_subprocess_exec(
             path, 'port', 'create', tunnel_name, '-p', str(port),
             stdout=asyncio.subprocess.DEVNULL,
@@ -128,7 +128,7 @@ async def start_port_forward(port: int) -> tuple[str, str] | str | None:
         )
         await proc_port.wait()
 
-        # Step 3: Host the tunnel
+        # Host the tunnel
         process = await asyncio.create_subprocess_exec(
             path, 'host', tunnel_name, '--allow-anonymous',
             stdout=asyncio.subprocess.PIPE,
@@ -137,7 +137,7 @@ async def start_port_forward(port: int) -> tuple[str, str] | str | None:
 
         active_tunnels[port] = process
 
-        # Continuously read and parse the generated tunnel URL from stdout    
+        # Parse stdout continuously for tunnel URLs
         if process.stdout:
             public_url = None
             inspect_url = None
@@ -149,14 +149,14 @@ async def start_port_forward(port: int) -> tuple[str, str] | str | None:
                 line = line_bytes.decode('utf-8', errors='replace')
                 
                 if line.strip():
-                    # Clean up ansi escape codes that might break our regex       
-                    clean_line = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', line)       
+                    # Clean ansi escape codes for regex matching
+                    clean_line = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', line)
 
-                    # Parse URLs based on line content
+                    # Extract the assigned URLs
                     if "Connect via browser:" in clean_line:
                         matches = _extract_urls(clean_line)
                         if matches:
-                            # Pick the 'dashed' URL format (typically the second one, or the one lacking port logic at the end)
+                            # Prefer dashed URL format
                             for match in matches:
                                 if f"-{port}." in match or (not match.endswith(f":{port}") and not match.endswith(f":{port}/")):
                                     public_url = match
@@ -170,9 +170,7 @@ async def start_port_forward(port: int) -> tuple[str, str] | str | None:
                             inspect_url = matches[0]
 
                     if public_url and inspect_url:
-                        # Once we have both URLs, we must continue reading the stdout in the 
-                        # background to prevent the pipe buffer from filling up and blocking 
-                        # the devtunnel process.
+                        # Drain stdout to prevent pipe buffer blocking
                         async def drain_stdout(stream):
                             while True:
                                 line = await stream.readline()
@@ -203,7 +201,7 @@ async def stop_port_forward(port: int) -> bool:
         path = get_devtunnel_path()
         tunnel_name = f"tui-tunnel-{port}"
         
-        # Fire and forget the delete command so it doesn't block the UI or get killed on app exit
+        # Fire-and-forget deletion avoids UI blocking
         if platform.system() == "Windows":
             flags = getattr(subprocess, 'CREATE_NO_WINDOW', 0x08000000)
             subprocess.Popen([path, 'delete', tunnel_name, '-f'], creationflags=flags)

@@ -2,7 +2,7 @@ import sys
 import os
 
 if sys.platform == "win32":
-    # This empty os.system call activates ANSI escape sequence processing in Windows terminals!
+    # Activate ANSI escape sequences in Windows
     os.system("") 
     if sys.stdout and getattr(sys.stdout, 'isatty', lambda: False)():
         # Custom Colored ASCII Logo (Green and Cyan)
@@ -119,7 +119,7 @@ class PortManagerApp(PortForwardingMixin, AppActionsMixin, App):
         from splash import StartupSplashScreen
         
         def _on_splash_dismissed(_=None):
-            # Trigger CSS mount animation after splash screen finishes
+            # Trigger CSS mount animation
             table_wrapper = self.query_one("#table_wrapper")
             self.set_timer(0.05, lambda: table_wrapper.add_class("-loaded"))
             self.set_timer(0.1, lambda: self.query_one("#sidebar").add_class("-loaded"))
@@ -129,6 +129,7 @@ class PortManagerApp(PortForwardingMixin, AppActionsMixin, App):
                 if hasattr(table, "_clear_caches"):
                     table._clear_caches()
                 table.refresh()
+                self.update_table()
             self.set_timer(0.27, _fix_table_render)
 
         self.push_screen(StartupSplashScreen(), _on_splash_dismissed)
@@ -191,7 +192,7 @@ class PortManagerApp(PortForwardingMixin, AppActionsMixin, App):
         self._last_highlighted_row = row_idx
         
         if not getattr(self, "_is_refreshing", False):
-            # Check if this highlight was caused by an immediate row selection click
+            # Check if triggered by instant row click
             self.set_timer(0.05, self._play_scroll_if_valid)
             setattr(self, "_highlight_cancel_scroll", False)
         self.update_sidebar()
@@ -225,10 +226,11 @@ class PortManagerApp(PortForwardingMixin, AppActionsMixin, App):
     def update_table(self) -> None:
         try:
             self._is_refreshing = True
-            self.query_one(AppTable).populate_table(self.processes_data, self.forwarded_ports)
+            app_table_matches = self.query(AppTable)
+            if app_table_matches:
+                app_table_matches.first().populate_table(self.processes_data, self.forwarded_ports)
             self.set_timer(0.45, lambda: setattr(self, "_is_refreshing", False))
         except Exception as e:
-            self.notify(f"Table update failed: {e}", severity="error")
             self._is_refreshing = False
 
     def update_inspector(self) -> None:

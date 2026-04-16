@@ -18,6 +18,7 @@ DataTable {
     border: round #45475a;
     border-title-color: #f38ba8;
     transition: border 300ms in_out_sine;
+    overflow-x: hidden;
 }
 
 DataTable:focus {

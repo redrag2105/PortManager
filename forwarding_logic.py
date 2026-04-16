@@ -31,7 +31,6 @@ class PortForwardingMixin(_BaseApp):
             return
 
         if fwd_status:
-            # Stop port forwarding
             from modals import ConfirmStopForwardingScreen
             async def _handle_confirm(confirm: bool):
                 if confirm:
@@ -45,8 +44,7 @@ class PortForwardingMixin(_BaseApp):
             self.app.push_screen(ConfirmStopForwardingScreen(port), _handle_confirm)
             return
 
-        # Not forwarded yet. Start DevTunnel logic
-        # Check limit
+        # Not forwarded yet. Start DevTunnel
         if len(self.forwarded_ports) >= 5:
             self.notify("Maximum of 5 forwarded ports reached.", severity="error")
             return
