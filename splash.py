@@ -160,7 +160,7 @@ class StartupSplashScreen(ModalScreen):
                 audio.stop()
                 return
             
-            # 1. The Cryptographic Decode Wave 
+            # The Cryptographic Decode Wave 
             if step < 85:
                 glitch_text = ""
                 wave_progress = step / 83.0 
@@ -184,19 +184,19 @@ class StartupSplashScreen(ModalScreen):
             elif step == 85:
                 safe_update("#splash_logo", ASCII_LOGO.strip("\n"))
 
-            # 2. Logs update unpredictably
+            # Logs update unpredictably
             if step % 4 == 0 and len(log_messages) > 0:
                 add_log(log_messages.pop(0))
             elif step % 3 == 0:
                 add_log(f"[0x{random.randint(1000,9999):04X}] OK")
 
-            # 3. Progress bar update
+            # Progress bar update
             progress = int((step / (total_steps - 1)) * 50)
             bar = ("█" * progress) + ("░" * (50 - progress))
             percent = int((step / (total_steps - 1)) * 100)
             safe_update("#splash_progress", f"[{bar}] {percent:>3}%")
             
-            # 4. Status update & Color Pop
+            # Status update & Color Pop
             if step < 25:
                 target = "STARTING CORE SERVICES..."
                 chars_to_show = int((step / 24) * len(target))
