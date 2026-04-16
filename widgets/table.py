@@ -8,6 +8,11 @@ from .theme import ThemeColors
 class AppTable(Container):
     """Wrapper for the dynamic data table displaying port configurations."""
     
+    # Layout constants mirroring styles.tcss
+    SIDEBAR_AND_PADDING_WIDTH = 34
+    TABLE_WIDTH_PERCENTAGE = 0.65
+    TABLE_RIGHT_MARGIN = 1
+    
     def compose(self) -> ComposeResult:
         yield DataTable(id="ports_table")
 
@@ -18,8 +23,8 @@ class AppTable(Container):
                     getattr(self.app, "processes_data", []), 
                     getattr(self.app, "forwarded_ports", {})
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            self.app.log.error(f"Table resize failed: {e}")
 
     def on_mount(self) -> None:
         table = self.query_one(DataTable)
@@ -55,8 +60,8 @@ class AppTable(Container):
         if term_width == 0:
             term_width = 120
             
-        main_content_w = max(10, term_width - 34)
-        table_wrapper_w = int(main_content_w * 0.65) - 1
+        main_content_w = max(10, term_width - self.SIDEBAR_AND_PADDING_WIDTH)
+        table_wrapper_w = int(main_content_w * self.TABLE_WIDTH_PERCENTAGE) - self.TABLE_RIGHT_MARGIN
         
         fixed_col_width = 3
         for col_key, col in table.columns.items():
