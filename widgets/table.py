@@ -25,7 +25,7 @@ class AppTable(Container):
                     getattr(self.app, "forwarded_ports", {})
                 )
         except Exception:
-            self.app.log.exception("Table resize failed")
+            self.app.log.error("Table resize failed")
 
     def on_mount(self) -> None:
         table = self.query_one(DataTable)
